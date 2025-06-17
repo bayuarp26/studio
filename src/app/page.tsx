@@ -9,16 +9,38 @@ import SkillsSection from "@/components/skills-section";
 import ProjectsSection from "@/components/projects-section";
 import ContactSection from "@/components/contact-section";
 import Footer from "@/components/footer";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Smartphone, X } from "lucide-react";
+import { Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogDescription, 
+  DialogFooter
+} from "@/components/ui/dialog";
+import { useIsMobile } from "@/hooks/use-mobile";
+
 
 const NAV_HEIGHT_OFFSET = 70; 
 
 export default function PortfolioPage() {
   const [activeSection, setActiveSection] = useState("hero");
-  const [isDeviceAlertVisible, setIsDeviceAlertVisible] = useState(true);
   const sectionRefs = useRef<{[key: string]: HTMLElement | null}>({});
+
+  const isMobile = useIsMobile();
+  const [isDeviceAlertOpen, setIsDeviceAlertOpen] = useState(false);
+  const [deviceAlertSessionDismissed, setDeviceAlertSessionDismissed] = useState(false);
+
+  useEffect(() => {
+    if (isMobile === true && !deviceAlertSessionDismissed) {
+      setIsDeviceAlertOpen(true);
+    }
+    else if (isMobile === false && isDeviceAlertOpen) {
+        setIsDeviceAlertOpen(false);
+    }
+  }, [isMobile, deviceAlertSessionDismissed, isDeviceAlertOpen]);
+
 
   const navLinks = [
     { id: "about", label: "Tentang Saya", href: "#about" },
@@ -147,24 +169,31 @@ export default function PortfolioPage() {
 
   return (
     <div className="bg-background text-foreground min-h-screen flex flex-col">
-      {isDeviceAlertVisible && (
-        <Alert variant="default" className="md:hidden rounded-none border-l-0 border-r-0 border-t-0 relative">
-          <Smartphone className="h-5 w-5" />
-          <AlertTitle className="font-semibold">Pengalaman Optimal</AlertTitle>
-          <AlertDescription>
-            Untuk tampilan terbaik, buka situs ini di perangkat PC atau Desktop.
-          </AlertDescription>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute right-1 top-1/2 -translate-y-1/2 p-1 h-auto"
-            onClick={() => setIsDeviceAlertVisible(false)}
-            aria-label="Tutup pemberitahuan"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </Alert>
-      )}
+      <Dialog open={isDeviceAlertOpen} onOpenChange={(open) => {
+          setIsDeviceAlertOpen(open);
+          if (!open) {
+              setDeviceAlertSessionDismissed(true);
+          }
+      }}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <Smartphone className="mr-2 h-5 w-5" />
+              Pengalaman Optimal
+            </DialogTitle>
+          </DialogHeader>
+          <DialogDescription className="py-4 text-muted-foreground">
+            Untuk tampilan dan pengalaman pengguna terbaik, kami merekomendasikan membuka situs ini di perangkat PC atau Desktop.
+          </DialogDescription>
+          <DialogFooter>
+            <Button onClick={() => {
+                setIsDeviceAlertOpen(false);
+                setDeviceAlertSessionDismissed(true);
+            }}>Mengerti</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Navigation 
         activeSection={activeSection} 
         navLinks={navLinks} 
@@ -213,3 +242,4 @@ export default function PortfolioPage() {
     </div>
   );
 }
+
