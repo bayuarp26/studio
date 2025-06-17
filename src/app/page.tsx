@@ -93,16 +93,16 @@ export default function PortfolioPage() {
     heroImageUrl: "/profile.png", 
     heroImageHint: "professional portrait",
     socialLinks: {
-      github: "https://github.com/wahyupratomo187",
-      linkedin: "https://linkedin.com/in/wahyupratomo",
+      github: "https://github.com/bayuarp26/",
+      linkedin: "https://linkedin.com/in/wahyupratomo26",
     },
-    cvUrl: "/download/Wahyu_Pratomo-cv.pdf", 
+    cvUrl: "/download/cv-wahyu-pratomo.pdf", 
     about: {
       imageUrl: "/profile.png", 
       imageHint: "team collaboration",
       paragraphs: [
-      "Wahyu Pratomo adalah seorang Spesialis Media Sosial dengan fokus pada Pemasaran Digital dan Kinerja Pemasaran.",
-      "Memiliki pengalaman selama 9 bulan di industri ini, Wahyu suka bekerja dengan merek yang memiliki misi dan berkomitmen untuk merepresentasikan produk secara menarik di media sosial."
+      "Saya adalah seorang Spesialis Media Sosial dengan fokus pada Pemasaran Digital dan Kinerja Pemasaran.",
+      "Memiliki pengalaman selama 9 bulan di industri ini, Saya suka bekerja dengan merek yang memiliki misi dan berkomitmen untuk merepresentasikan produk secara menarik di media sosial."
       ],
       education: [
       { institution: "Sekolah Tinggi Teknologi Indonesia", detail: "Mahasiswa Tingkat Akhir (2020 - 2025)" },
@@ -157,7 +157,7 @@ export default function PortfolioPage() {
         title: "Sambal Sarumpet - Warisan Rasa",
         imageUrl: "/sarumpet.png",
         imageHint: "food content",
-        description: "Saya	menyusun	copywriting untuk		@sambalsarumpet yang		menekankan	warisan rasa	dan	keautentikan, termasuk  untuk  konsep  take  away.  Strategi  visual  dan engagement saya melibatkan penggunaan gambar close- up sambal dan makanan tradisional, emoji kuliner, serta pertanyaan interaktif. Tone yang saya gunakan bersifat naratif,  persuasif,  dan  santai,  dengan  pesan  inti  bahwa Sambal Sarumpet bukan sekadar pedas, tapi warisan rasa yang tetap autentik di setiap kondisi",
+        description: "Merancang strategi copywriting untuk @sambalsarumpet, menonjolkan warisan rasa dan keautentikan sambal, termasuk untuk konsep take away. Visual dan interaksi ditingkatkan dengan gambar close-up, emoji kuliner, dan pertanyaan interaktif. Tone yang digunakan bersifat naratif, persuasif, dan santai, dengan pesan utama: Sambal Sarumpet adalah warisan rasa yang autentik di setiap kondisi.",
         details: ["Deskripsi: Mengembangkan strategi konten kreatif rasa dan pengalaman pelanggan.", "Visual: Short copy dan visual donat warna-warni serta close-up.", "Engagement: Reels, foto carousel, UGC, tantangan, dan kontes."],
         tags: ["Content Creation", "Visual Design", "User Engagement"],
       }
