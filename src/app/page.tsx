@@ -9,9 +9,8 @@ import SkillsSection from "@/components/skills-section";
 import ProjectsSection from "@/components/projects-section";
 import ContactSection from "@/components/contact-section";
 import Footer from "@/components/footer";
-import { Github, Linkedin, Twitter, Download, ExternalLink } from 'lucide-react';
 
-const NAV_HEIGHT_OFFSET = 70; // Adjusted nav height offset
+const NAV_HEIGHT_OFFSET = 70; 
 
 export default function PortfolioPage() {
   const [activeSection, setActiveSection] = useState("hero");
@@ -56,7 +55,7 @@ export default function PortfolioPage() {
       sectionRefs.current[id] = document.getElementById(id);
     });
     
-    handleScroll(); // Initial check
+    handleScroll(); 
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, [handleScroll, allSectionIds]);
@@ -68,13 +67,13 @@ export default function PortfolioPage() {
     heroImageUrl: "https://placehold.co/240x240.png",
     heroImageHint: "professional portrait",
     socialLinks: {
-      github: "https://github.com/yourusername",
-      linkedin: "https://linkedin.com/in/yourusername",
+      github: "https://github.com/wahyupratomo187",
+      linkedin: "https://linkedin.com/in/wahyupratomo",
       twitter: "https://twitter.com/yourusername",
     },
-    cvUrl: "/path-to-your-cv.pdf", // Replace with actual path or link
+    cvUrl: "/wahyu-pratomo-cv.pdf", 
     about: {
-      imageUrl: "https://placehold.co/600x450.png", // Slightly adjusted aspect ratio
+      imageUrl: "https://placehold.co/600x450.png",
       imageHint: "team collaboration",
       paragraphs: [
         "Wahyu Pratomo adalah seorang Spesialis Media Sosial dengan fokus pada Pemasaran Digital dan Kinerja Pemasaran.",
@@ -88,7 +87,7 @@ export default function PortfolioPage() {
     skills: [
       { name: "Pemasaran Digital" },
       { name: "Manajemen Proyek" },
-      { name: "Desain Berkelanjutan" }, // Keeping this for now, can be reviewed
+      { name: "Desain Berkelanjutan" },
       { name: "Kolaborasi Tim" },
       { name: "Komunikasi Klien" },
       { name: "SEO" },
@@ -101,37 +100,33 @@ export default function PortfolioPage() {
         title: "Kampanye Harisenin.com",
         imageUrl: "https://placehold.co/800x450.png",
         imageHint: "marketing campaign",
-        description: "Meningkatkan kesadaran merek dan akuisisi pelanggan untuk Harisenin.com melalui strategi media sosial yang komprehensif.",
+        description: "Meningkatkan kesadaran merek dan akuisisi pelanggan untuk Harisenin.com melalui strategi media sosial yang komprehensif. Bertanggung jawab untuk meningkatkan copywriting, hook, dan desain konten yang menarik bagi audiens target.",
         details: ["Tujuan: Meningkatkan kesadaran merek dan produk melalui media sosial.", "Strategi: Meningkatkan copywriting, hook, dan desain konten. Menarik audiens.", "Hasil: Pertumbuhan follower (+30%), jangkauan brand (100.000+), engagement (5%+), leads baru (100+)."],
         tags: ["Social Media", "Copywriting", "Content Strategy", "Campaign Management"],
-        links: { github: "https://github.com/project", demo: "https://livedemo.com/project1" }
       },
       {
         title: "Identitas Merek TEMA \"Coffee & Space\"",
         imageUrl: "https://placehold.co/800x450.png",
         imageHint: "brand design",
-        description: "Mengembangkan identitas merek yang kuat untuk TEMA \"Coffee & Space\" dengan analisis pasar dan riset audiens.",
+        description: "Mengembangkan identitas merek yang kuat untuk TEMA \"Coffee & Space\" dengan melakukan analisis pasar mendalam dan riset audiens. Fokus pada penguatan posisi pasar dan pengembangan pesan yang resonan.",
         details: ["Analisis Merek: Memperkuat posisi pasar TEMA.", "Riset Audiens: Menarik pelanggan baru.", "Pengembangan Pesan: Meningkatkan kesadaran merek dan penjualan."],
         tags: ["Branding", "Market Research", "Strategy"],
-        links: { github: "https://github.com/project2" }
       },
       {
         title: "Analisis Media Sosial TukangSayur.co",
         imageUrl: "https://placehold.co/800x450.png",
         imageHint: "data analytics",
-        description: "Analisis mendalam performa media sosial TukangSayur.co di Instagram dan rekomendasi strategis.",
+        description: "Melakukan analisis mendalam terhadap performa media sosial TukangSayur.co di platform Instagram. Memberikan rekomendasi strategis berdasarkan data untuk peningkatan engagement dan pertumbuhan.",
         details: ["Analisis Profil: Instagram: username, bio, tautan.", "Kinerja Postingan: Frekuensi, jenis konten, waktu, engagement.", "Penggunaan Tools: Analisis dengan Social Blade."],
         tags: ["Social Media Analysis", "Instagram", "Data Analytics"],
-        links: { demo: "https://livedemo.com/project3" }
       },
       {
         title: "Kanenakan (Donat) - Konten Kreatif",
         imageUrl: "https://placehold.co/800x450.png",
         imageHint: "food content",
-        description: "Merancang strategi konten kreatif untuk Kanenakan (Donat) yang berfokus pada visual menarik dan interaksi.",
+        description: "Merancang dan mengimplementasikan strategi konten kreatif untuk Kanenakan (Donat) yang berfokus pada visual produk yang menarik dan peningkatan interaksi pengguna melalui berbagai format konten.",
         details: ["Deskripsi: Mengembangkan strategi konten kreatif rasa dan pengalaman pelanggan.", "Visual: Short copy dan visual donat warna-warni serta close-up.", "Engagement: Reels, foto carousel, UGC, tantangan, dan kontes."],
         tags: ["Content Creation", "Visual Design", "User Engagement"],
-        links: { github: "https://github.com/project4", demo: "https://livedemo.com/project4" }
       }
     ],
     contactEmail: "wahyupratomo187@gmail.com",
@@ -145,7 +140,7 @@ export default function PortfolioPage() {
         navLinks={navLinks} 
         profileName={profileData.name} 
       />
-      <main className="flex-grow pt-16 md:pt-20"> {/* Adjusted padding top */}
+      <main className="flex-grow pt-16 md:pt-20">
         <HeroSection
           id="hero"
           name={profileData.name}

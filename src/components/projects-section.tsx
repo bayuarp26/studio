@@ -2,10 +2,6 @@
 import SectionContainer from './section-container';
 import ProjectCard from './project-card';
 
-interface ProjectLink {
-  github?: string;
-  demo?: string;
-}
 interface Project {
   title: string;
   imageUrl: string;
@@ -13,7 +9,6 @@ interface Project {
   description: string;
   details: string[];
   tags: string[];
-  links: ProjectLink;
 }
 
 interface ProjectsSectionProps {
@@ -36,7 +31,6 @@ export default function ProjectsSection({ id, title, projects }: ProjectsSection
             description={project.description}
             details={project.details}
             tags={project.tags}
-            links={project.links}
           />
         ))}
       </div>
