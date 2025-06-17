@@ -12,7 +12,7 @@ interface ProjectCardProps {
 
 export default function ProjectCard({ imageUrl, imageHint, title, description, details }: ProjectCardProps) {
   return (
-    <Card className="overflow-hidden hover:shadow-2xl transition-all transform hover:-translate-y-1 duration-300 rounded-lg bg-white/20 backdrop-blur-lg border border-white/30 shadow-xl">
+    <Card className="overflow-hidden hover:shadow-2xl transition-all transform hover:-translate-y-1 duration-300 rounded-lg bg-card/30 backdrop-blur-md border border-border/50 shadow-lg">
       <CardHeader className="p-0">
         <div className="relative aspect-video w-full">
           <Image
