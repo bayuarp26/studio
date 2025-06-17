@@ -29,7 +29,7 @@ export default function ProjectCard({ imageUrl, imageHint, title, description, t
       </CardHeader>
       <CardContent className="p-5 flex-grow">
         <CardTitle className="text-xl lg:text-2xl mb-2 text-foreground">{title}</CardTitle>
-        <CardDescription className="text-sm text-muted-foreground mb-4 leading-relaxed line-clamp-4">
+        <CardDescription className="text-sm text-muted-foreground mb-4 leading-relaxed">
           {description}
         </CardDescription>
         <div className="mb-4">
@@ -40,7 +40,6 @@ export default function ProjectCard({ imageUrl, imageHint, title, description, t
           ))}
         </div>
       </CardContent>
-      {/* CardFooter removed */}
     </Card>
   );
 }
