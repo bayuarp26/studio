@@ -127,6 +127,14 @@ export default function PortfolioPage() {
         description: "Merancang dan mengimplementasikan strategi konten kreatif untuk Kanenakan (Donat) yang berfokus pada visual produk yang menarik dan peningkatan interaksi pengguna melalui berbagai format konten.",
         details: ["Deskripsi: Mengembangkan strategi konten kreatif rasa dan pengalaman pelanggan.", "Visual: Short copy dan visual donat warna-warni serta close-up.", "Engagement: Reels, foto carousel, UGC, tantangan, dan kontes."],
         tags: ["Content Creation", "Visual Design", "User Engagement"],
+      },
+      {
+        title: "Proyek Kelima (Placeholder)",
+        imageUrl: "https://placehold.co/800x450.png",
+        imageHint: "project placeholder",
+        description: "Ini adalah deskripsi placeholder untuk proyek kelima Anda. Silakan perbarui dengan detail proyek yang sebenarnya.",
+        details: ["Detail 1 untuk proyek kelima.", "Detail 2 untuk proyek kelima.", "Detail 3 untuk proyek kelima."],
+        tags: ["Teknologi 1", "Teknologi 2", "Placeholder"],
       }
     ],
     contactEmail: "wahyupratomo187@gmail.com",
