@@ -5,32 +5,32 @@
 
 @layer base {
   :root {
-    --background: 215 55% 8%; /* #09121f */
-    --foreground: 210 20% 85%; /* Light gray/off-white for general text */
+    --background: 0 0% 98%; /* Near white */
+    --foreground: 222.2 47.4% 11.2%; /* Dark gray/black for general text */
 
-    --card: 215 50% 12%; /* Slightly lighter dark blue for cards */
-    --card-foreground: 210 20% 85%;
+    --card: 0 0% 100%; /* White */
+    --card-foreground: 222.2 47.4% 11.2%;
 
-    --popover: 215 50% 12%;
-    --popover-foreground: 210 20% 85%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 47.4% 11.2%;
 
-    --primary: 48 100% 50%; /* #ffcc02 - for primary actions, headings */
-    --primary-foreground: 215 55% 8%; /* Dark background color for text on yellow primary elements */
+    --primary: 48 100% 50%; /* #ffcc02 - Yellow */
+    --primary-foreground: 215 55% 8%; /* #09121f - Dark blue/black for text on yellow */
 
-    --secondary: 215 40% 15%; /* Muted dark blue */
-    --secondary-foreground: 48 100% 50%; /* Yellow text on secondary dark blue buttons */
+    --secondary: 210 40% 96.1%; /* Light gray */
+    --secondary-foreground: 222.2 47.4% 11.2%; /* Dark text on light gray */
 
-    --muted: 215 30% 20%;
-    --muted-foreground: 210 20% 65%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%; /* Medium gray */
 
-    --accent: 48 100% 50%; /* #ffcc02 - for accents */
-    --accent-foreground: 215 55% 8%; /* Dark background color for text on yellow accent elements */
+    --accent: 48 100% 50%; /* #ffcc02 - Yellow */
+    --accent-foreground: 215 55% 8%; /* #09121f - Dark blue/black for text on yellow */
 
-    --destructive: 0 70% 45%; /* Darker red for destructive actions */
-    --destructive-foreground: 0 0% 98%; /* Light text on destructive */
+    --destructive: 0 84.2% 60.2%; /* Red */
+    --destructive-foreground: 0 0% 98%; /* Light text on red */
 
-    --border: 215 30% 25%; /* Subtle dark border */
-    --input: 215 30% 25%;
+    --border: 214.3 31.8% 91.4%; /* Light gray border */
+    --input: 214.3 31.8% 91.4%;
     --ring: 48 100% 55%; /* Brighter yellow for focus rings */
     
     --chart-1: 48 100% 50%; /* Yellow */
@@ -41,11 +41,9 @@
     --radius: 0.5rem;
 
     /* Specific for footer */
-    --footer-background: 215 55% 6%; /* Even darker for footer */
-    --footer-foreground: 210 20% 70%;
+    --footer-background: 215 55% 8%; /* #09121f - Dark for footer */
+    --footer-foreground: 210 20% 85%; /* Light gray/off-white for footer text */
   }
-
-  /* Removed the .dark block as :root now defines the primary dark theme */
 }
 
 @layer base {

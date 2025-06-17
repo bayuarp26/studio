@@ -12,13 +12,13 @@ interface ContactSectionProps {
 
 export default function ContactSection({ id, title, email }: ContactSectionProps) {
   return (
-    <SectionContainer id={id} className="bg-secondary">
+    <SectionContainer id={id} className="bg-secondary"> {/* Light gray secondary background */}
       <div className="max-w-xl mx-auto text-center">
         <h2 id={`${id}-heading`} className="section-title inline-block">{title}</h2>
         <p className="text-lg text-muted-foreground mb-8 mt-[-1.5rem]">
           Saya selalu terbuka untuk diskusi, kolaborasi, atau sekadar menyapa. Jangan ragu untuk menghubungi!
         </p>
-        <Card className="bg-card shadow-xl">
+        <Card className="bg-card shadow-xl border border-border">
           <CardContent className="p-6 md:p-8">
             <a
               href={`mailto:${email}`}

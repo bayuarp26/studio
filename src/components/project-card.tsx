@@ -14,9 +14,9 @@ interface ProjectCardProps {
 
 export default function ProjectCard({ imageUrl, imageHint, title, description, tags }: ProjectCardProps) {
   return (
-    <Card className="overflow-hidden bg-card/30 backdrop-blur-md border border-border/50 shadow-lg hover:shadow-xl transition-all duration-300 flex flex-col h-full">
+    <Card className="overflow-hidden bg-card border border-border shadow-lg hover:shadow-xl transition-all duration-300 flex flex-col h-full">
       <CardHeader className="p-0">
-        <div className="relative aspect-[16/9] w-full"> {/* Aspect ratio for project images */}
+        <div className="relative aspect-[16/9] w-full">
           <Image
             src={imageUrl}
             alt={title}
@@ -28,13 +28,16 @@ export default function ProjectCard({ imageUrl, imageHint, title, description, t
         </div>
       </CardHeader>
       <CardContent className="p-5 flex-grow">
-        <CardTitle className="text-xl lg:text-2xl mb-2 text-foreground">{title}</CardTitle>
+        <CardTitle className="text-xl lg:text-2xl mb-2 text-primary">{title}</CardTitle>
         <CardDescription className="text-sm text-muted-foreground mb-4 leading-relaxed">
           {description}
         </CardDescription>
         <div className="mb-4">
           {tags.map((tag, index) => (
-            <Badge key={index} variant="secondary" className="mr-2 mb-2 text-xs px-2 py-1">
+            <Badge 
+              key={index} 
+              className="mr-2 mb-2 text-xs px-2 py-1 bg-[#09121f] text-primary border border-primary/30 hover:bg-primary hover:text-primary-foreground transition-colors"
+            >
               {tag}
             </Badge>
           ))}

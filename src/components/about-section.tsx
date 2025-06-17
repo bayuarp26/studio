@@ -31,7 +31,7 @@ export default function AboutSection({ id, title, imageUrl, imageHint, paragraph
             sizes="(max-width: 768px) 80vw, (max-width: 1200px) 40vw, 33vw"
           />
         </div>
-        <div className="md:col-span-3 space-y-4 text-foreground">
+        <div className="md:col-span-3 space-y-4">
           {paragraphs.map((p, index) => (
             <p key={index} className="leading-relaxed text-base md:text-lg text-muted-foreground">
               {p}
@@ -41,7 +41,7 @@ export default function AboutSection({ id, title, imageUrl, imageHint, paragraph
             <h3 className="font-semibold text-xl text-primary mt-6 mb-3">Latar Belakang Pendidikan</h3>
             <ul className="space-y-2 text-base md:text-lg">
               {education.map((edu, index) => (
-                <li key={index} className="bg-secondary/50 p-3 rounded-md shadow-sm">
+                <li key={index} className="bg-card p-3 rounded-md shadow-sm border border-border">
                   <strong className="text-foreground">{edu.institution}</strong>
                   <p className="text-muted-foreground text-sm">{edu.detail}</p>
                 </li>
