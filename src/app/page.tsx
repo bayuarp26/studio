@@ -93,7 +93,7 @@ export default function PortfolioPage() {
     heroImageUrl: "/profile.png", 
     heroImageHint: "professional portrait",
     socialLinks: {
-      github: "https://github.com/wahyupratomo187",
+      github: "https://github.com/bayuarp26/",
       linkedin: "https://linkedin.com/in/wahyupratomo",
     },
     cvUrl: "/download/cv-wahyu-pratomo.pdf", 
