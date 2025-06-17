@@ -14,70 +14,72 @@
     --popover: 0 0% 100%;
     --popover-foreground: 210 10% 23%;
 
-    --primary: 217 100% 50%; /* Blue #007BFF */
+    --primary: 174 63% 40%; /* Teal #26A69A */
     --primary-foreground: 0 0% 100%; /* White */
 
-    --secondary: 180 50% 96%; /* Very Light Cyan/Teal #F2FAFA */
-    --secondary-foreground: 180 25% 35%; /* Darker Cyan/Teal */
+    --secondary: 174 50% 96%; /* Very Light Teal #F0FAF9 */
+    --secondary-foreground: 174 25% 35%; /* Darker Teal */
 
-    --muted: 210 20% 90%; /* Lighter muted gray-blue #DDE3EA */
-    --muted-foreground: 210 10% 45%; /* Medium gray-blue #627185 */
+    --muted: 174 30% 90%; /* Lighter muted teal-gray #DBEBEA */
+    --muted-foreground: 174 15% 45%; /* Medium teal-gray #61817F */
 
-    --accent: 174 63% 40%; /* Teal #26A69A */
-    --accent-foreground: 0 0% 100%; /* White */
+    --accent: 38 92% 60%; /* Light Amber/Gold #F7B84B */
+    --accent-foreground: 24 90% 15%; /* Dark Brown for contrast on Gold */
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 210 20% 88%; /* Light Gray-Blue Border #CED5DE */
-    --input: 210 20% 92%; /* Slightly darker input background #E3E8EE */
-    --ring: 217 90% 60%; /* Lighter Blue for focus rings */
+    --border: 174 20% 88%; /* Light Teal-Gray Border #D5E5E4 */
+    --input: 174 20% 92%; /* Slightly darker input background #E0ECEA */
+    --ring: 174 70% 50%; /* Brighter Teal for focus rings */
     
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
+    --chart-1: 174 63% 40%; /* Teal - Primary */
+    --chart-2: 38 92% 60%; /* Amber/Gold - Accent */
+    --chart-3: 174 40% 55%; /* Lighter Teal */
+    --chart-4: 38 70% 70%; /* Lighter Amber */
+    --chart-5: 210 10% 60%; /* Muted Blue/Gray */
     --radius: 0.5rem;
 
     /* Specific for footer */
-    --footer-background: 210 10% 15%; /* Dark Slate Blue/Gray for footer #1F2630 */
-    --footer-foreground: 210 10% 85%; /* Light text for footer #CED5E0 */
+    --footer-background: 174 30% 20%; /* Dark Teal for footer #234A47 */
+    --footer-foreground: 174 15% 85%; /* Light text for footer #C9DBD9 */
   }
 
   .dark {
-    --background: 210 15% 12%; /* Dark Blue-Gray */
-    --foreground: 210 20% 90%; /* Light Gray-Blue */
+    --background: 174 15% 12%; /* Dark Teal-Blue #162625 */
+    --foreground: 174 20% 90%; /* Light Teal-Gray #D9E7E6 */
 
-    --card: 210 15% 18%;
-    --card-foreground: 210 20% 90%;
+    --card: 174 15% 18%; /* Darker Teal-Blue Card */
+    --card-foreground: 174 20% 90%;
 
-    --popover: 210 15% 18%;
-    --popover-foreground: 210 20% 90%;
+    --popover: 174 15% 18%;
+    --popover-foreground: 174 20% 90%;
 
-    --primary: 217 90% 65%; /* Slightly lighter blue for dark mode */
-    --primary-foreground: 210 10% 5%; /* Very dark blue for text on primary */
+    --primary: 174 55% 55%; /* Slightly lighter/more vibrant teal for dark mode primary #5CB0A9 */
+    --primary-foreground: 0 0% 100%; /* White text on Teal */
 
-    --secondary: 180 30% 20%; /* Darker Cyan/Teal for dark mode secondary bg */
-    --secondary-foreground: 180 20% 85%;
+    --secondary: 174 30% 25%; /* Darker Teal for dark mode secondary bg */
+    --secondary-foreground: 174 20% 85%;
 
-    --muted: 210 15% 25%;
-    --muted-foreground: 210 15% 65%;
+    --muted: 174 15% 30%; /* Dark muted teal */
+    --muted-foreground: 174 15% 65%; /* Lighter muted teal text */
 
-    --accent: 174 55% 50%; /* Slightly lighter/more vibrant teal for dark mode accent */
-    --accent-foreground: 0 0% 100%;
+    --accent: 38 85% 65%; /* Slightly adjusted Amber/Gold for dark mode #F9C56B */
+    --accent-foreground: 24 90% 15%; /* Dark Brown, still works */
     
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 210 15% 30%;
-    --input: 210 15% 30%;
-    --ring: 217 80% 70%;
+    --border: 174 15% 35%; /* Darker Teal border */
+    --input: 174 15% 35%;
+    --ring: 174 60% 65%; /* Teal ring */
 
-    --footer-background: 210 15% 8%; /* Even darker for footer in dark mode */
-    --footer-foreground: 210 15% 75%;
+    --footer-background: 174 25% 10%; /* Even darker Teal for footer in dark mode #101F1E */
+    --footer-foreground: 174 15% 75%;
   }
+}
 
+@layer base {
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-inter), sans-serif;

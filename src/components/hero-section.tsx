@@ -42,19 +42,19 @@ export default function HeroSection({ id, name, title, tagline, imageUrl, imageH
           <p className="text-lg sm:text-xl md:text-2xl opacity-90 mb-4">{title}</p>
           <p className="text-md sm:text-lg opacity-75 max-w-xl mx-auto md:mx-0 mb-8">{tagline}</p>
           <div className="flex flex-col sm:flex-row justify-center md:justify-start items-center gap-4">
-            <Button asChild size="lg" variant="outline" className="bg-primary-foreground/10 hover:bg-primary-foreground/20 text-primary-foreground border-primary-foreground/50">
+            <Button asChild size="lg" variant="outline" className="bg-primary-foreground/10 hover:bg-primary-foreground/20 text-primary-foreground border-primary-foreground/50 hover:border-primary-foreground/70">
               <a href={cvUrl} target="_blank" rel="noopener noreferrer">
                 <Download className="mr-2 h-5 w-5" />
                 Unduh CV
               </a>
             </Button>
             <div className="flex space-x-3 mt-4 sm:mt-0">
-              <Button asChild variant="outline" size="icon" className="rounded-full bg-primary-foreground/10 hover:bg-primary-foreground/20 text-primary-foreground border-primary-foreground/50">
+              <Button asChild variant="outline" size="icon" className="rounded-full bg-primary-foreground/10 hover:bg-primary-foreground/20 text-primary-foreground border-primary-foreground/50 hover:border-primary-foreground/70">
                 <a href={socialLinks.github} target="_blank" rel="noopener noreferrer" aria-label="GitHub">
                   <Github className="h-5 w-5" />
                 </a>
               </Button>
-              <Button asChild variant="outline" size="icon" className="rounded-full bg-primary-foreground/10 hover:bg-primary-foreground/20 text-primary-foreground border-primary-foreground/50">
+              <Button asChild variant="outline" size="icon" className="rounded-full bg-primary-foreground/10 hover:bg-primary-foreground/20 text-primary-foreground border-primary-foreground/50 hover:border-primary-foreground/70">
                 <a href={socialLinks.linkedin} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
                   <Linkedin className="h-5 w-5" />
                 </a>
