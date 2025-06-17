@@ -1,3 +1,4 @@
+
 import SectionContainer from './section-container';
 import ProjectCard from './project-card';
 
@@ -5,6 +6,7 @@ interface Project {
   title: string;
   imageUrl: string;
   imageHint: string;
+  description: string;
   details: string[];
 }
 
@@ -25,6 +27,7 @@ export default function ProjectsSection({ id, title, projects }: ProjectsSection
             title={project.title}
             imageUrl={project.imageUrl}
             imageHint={project.imageHint}
+            description={project.description}
             details={project.details}
           />
         ))}
@@ -32,3 +35,5 @@ export default function ProjectsSection({ id, title, projects }: ProjectsSection
     </SectionContainer>
   );
 }
+
+    

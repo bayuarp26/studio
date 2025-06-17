@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -87,11 +88,41 @@ export default function PortfolioPage() {
       { icon: MessageSquare, title: "Komunikasi Klien", description: "Membangun hubungan kuat dengan klien." }
     ],
     projects: [
-      { title: "Kampanye Harisenin.com", imageUrl: "https://placehold.co/800x400.png", imageHint: "campaign harisenin", details: ["Tujuan: Meningkatkan kesadaran merek dan produk melalui media sosial.", "Strategi: Meningkatkan copywriting, hook, dan desain konten. Menarik audiens.", "Hasil: Pertumbuhan follower (+30%), jangkauan brand (100.000+), engagement (5%+), leads baru (100+)."] },
-      { title: "Identitas Merek TEMA \"Coffee & Space\"", imageUrl: "https://placehold.co/800x400.png", imageHint: "brand identity", details: ["Analisis Merek: Memperkuat posisi pasar TEMA.", "Riset Audiens: Menarik pelanggan baru.", "Pengembangan Pesan: Meningkatkan kesadaran merek dan penjualan."] },
-      { title: "Analisis Media Sosial TukangSayur.co", imageUrl: "https://placehold.co/800x400.png", imageHint: "social media analysis", details: ["Analisis Profil: Instagram: username, bio, tautan.", "Kinerja Postingan: Frekuensi, jenis konten, waktu, engagement.", "Penggunaan Tools: Analisis dengan Social Blade."] },
-      { title: "Kanenakan (Donat)", imageUrl: "https://placehold.co/800x400.png", imageHint: "creative content", details: ["Deskripsi: Mengembangkan strategi konten kreatif rasa dan pengalaman pelanggan.", "Visual: Short copy dan visual donat warna-warni serta close-up.", "Engagement: Reels, foto carousel, UGC, tantangan, dan kontes."] },
-      { title: "Sambal Sarumpet", imageUrl: "https://placehold.co/800x400.png", imageHint: "brand narrative", details: ["Deskripsi: Merancang strategi konten untuk memperkuat narasi brand.", "Copywriting: Visual close-up sambal dan makanan tradisional.", "Tone: Naratif, persuasif, dan santai."] }
+      { 
+        title: "Kampanye Harisenin.com", 
+        imageUrl: "https://placehold.co/800x400.png", 
+        imageHint: "campaign harisenin",
+        description: "Meningkatkan kesadaran merek dan akuisisi pelanggan untuk Harisenin.com melalui strategi media sosial yang komprehensif, termasuk optimasi konten dan penargetan audiens yang efektif.",
+        details: ["Tujuan: Meningkatkan kesadaran merek dan produk melalui media sosial.", "Strategi: Meningkatkan copywriting, hook, dan desain konten. Menarik audiens.", "Hasil: Pertumbuhan follower (+30%), jangkauan brand (100.000+), engagement (5%+), leads baru (100+)."] 
+      },
+      { 
+        title: "Identitas Merek TEMA \"Coffee & Space\"", 
+        imageUrl: "https://placehold.co/800x400.png", 
+        imageHint: "brand identity",
+        description: "Mengembangkan identitas merek yang kuat untuk TEMA \"Coffee & Space\" dengan melakukan analisis pasar mendalam, riset audiens, dan perancangan pesan kunci untuk meningkatkan posisi pasar dan penjualan.",
+        details: ["Analisis Merek: Memperkuat posisi pasar TEMA.", "Riset Audiens: Menarik pelanggan baru.", "Pengembangan Pesan: Meningkatkan kesadaran merek dan penjualan."] 
+      },
+      { 
+        title: "Analisis Media Sosial TukangSayur.co", 
+        imageUrl: "https://placehold.co/800x400.png", 
+        imageHint: "social media analysis",
+        description: "Melakukan analisis mendalam terhadap performa media sosial TukangSayur.co di Instagram, mengevaluasi profil, kinerja postingan, dan penggunaan tools analitik untuk memberikan rekomendasi strategis.",
+        details: ["Analisis Profil: Instagram: username, bio, tautan.", "Kinerja Postingan: Frekuensi, jenis konten, waktu, engagement.", "Penggunaan Tools: Analisis dengan Social Blade."] 
+      },
+      { 
+        title: "Kanenakan (Donat)", 
+        imageUrl: "https://placehold.co/800x400.png", 
+        imageHint: "creative content",
+        description: "Merancang dan mengimplementasikan strategi konten kreatif untuk Kanenakan (Donat) yang berfokus pada visual menarik dan interaksi pengguna, guna meningkatkan engagement dan brand awareness.",
+        details: ["Deskripsi: Mengembangkan strategi konten kreatif rasa dan pengalaman pelanggan.", "Visual: Short copy dan visual donat warna-warni serta close-up.", "Engagement: Reels, foto carousel, UGC, tantangan, dan kontes."] 
+      },
+      { 
+        title: "Sambal Sarumpet", 
+        imageUrl: "https://placehold.co/800x400.png", 
+        imageHint: "brand narrative",
+        description: "Membangun narasi brand yang kuat untuk Sambal Sarumpet melalui strategi konten yang memikat, menggabungkan copywriting persuasif dengan visual produk yang menggugah selera untuk meningkatkan koneksi emosional dengan audiens.",
+        details: ["Deskripsi: Merancang strategi konten untuk memperkuat narasi brand.", "Copywriting: Visual close-up sambal dan makanan tradisional.", "Tone: Naratif, persuasif, dan santai."] 
+      }
     ],
     contactEmail: "wahyupratomo187@gmail.com",
     copyrightYear: 2025
@@ -136,3 +167,5 @@ export default function PortfolioPage() {
     </div>
   );
 }
+
+    
