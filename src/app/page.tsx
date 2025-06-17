@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -90,23 +89,24 @@ export default function PortfolioPage() {
     name: "Wahyu Pratomo",
     title: "Spesialis Media Sosial | Digital Marketing Expert | Strategi dan Kinerja Pemasaran",
     heroTagline: "Membantu merek berkembang di dunia digital dengan strategi yang data-driven dan konten yang menarik.",
-    heroImageUrl: "https://placehold.co/240x240.png",
+    heroImageUrl: "/profile.png", // Menggunakan gambar name.png dari folder public
     heroImageHint: "professional portrait",
     socialLinks: {
       github: "https://github.com/wahyupratomo187",
       linkedin: "https://linkedin.com/in/wahyupratomo",
     },
-    cvUrl: "/wahyu-pratomo-cv.pdf", 
+    // Pastikan file CV ini ada di folder public/download/
+    cvUrl: "/download/cv-wahyu-pratomo.pdf", 
     about: {
-      imageUrl: "https://placehold.co/600x450.png",
+      imageUrl: "/profile.png", // Menggunakan gambar name.png dari folder public
       imageHint: "team collaboration",
       paragraphs: [
-        "Wahyu Pratomo adalah seorang Spesialis Media Sosial dengan fokus pada Pemasaran Digital dan Kinerja Pemasaran.",
-        "Memiliki pengalaman selama 9 bulan di industri ini, Wahyu suka bekerja dengan merek yang memiliki misi dan berkomitmen untuk merepresentasikan produk secara menarik di media sosial."
+      "Wahyu Pratomo adalah seorang Spesialis Media Sosial dengan fokus pada Pemasaran Digital dan Kinerja Pemasaran.",
+      "Memiliki pengalaman selama 9 bulan di industri ini, Wahyu suka bekerja dengan merek yang memiliki misi dan berkomitmen untuk merepresentasikan produk secara menarik di media sosial."
       ],
       education: [
-        { institution: "Sekolah Tinggi Teknologi Indonesia", detail: "Mahasiswa Tingkat Akhir (2020 - 2025)" },
-        { institution: "Harisenin.com", detail: "Lulusan Bootcamp Digital Marketing" }
+      { institution: "Sekolah Tinggi Teknologi Indonesia", detail: "Mahasiswa Tingkat Akhir (2020 - 2025)" },
+      { institution: "Harisenin.com", detail: "Lulusan Bootcamp Digital Marketing" }
       ]
     },
     skills: [
@@ -123,7 +123,7 @@ export default function PortfolioPage() {
     projects: [
       {
         title: "Kampanye Harisenin.com",
-        imageUrl: "https://placehold.co/800x450.png",
+        imageUrl: "/rise.png",
         imageHint: "marketing campaign",
         description: "Meningkatkan kesadaran merek dan akuisisi pelanggan untuk Harisenin.com melalui strategi media sosial yang komprehensif. Bertanggung jawab untuk meningkatkan copywriting, hook, dan desain konten yang menarik bagi audiens target.",
         details: ["Tujuan: Meningkatkan kesadaran merek dan produk melalui media sosial.", "Strategi: Meningkatkan copywriting, hook, dan desain konten. Menarik audiens.", "Hasil: Pertumbuhan follower (+30%), jangkauan brand (100.000+), engagement (5%+), leads baru (100+)."],
@@ -131,7 +131,7 @@ export default function PortfolioPage() {
       },
       {
         title: "Identitas Merek TEMA \"Coffee & Space\"",
-        imageUrl: "https://placehold.co/800x450.png",
+        imageUrl: "/tema.png",
         imageHint: "brand design",
         description: "Mengembangkan identitas merek yang kuat untuk TEMA \"Coffee & Space\" dengan melakukan analisis pasar mendalam dan riset audiens. Fokus pada penguatan posisi pasar dan pengembangan pesan yang resonan.",
         details: ["Analisis Merek: Memperkuat posisi pasar TEMA.", "Riset Audiens: Menarik pelanggan baru.", "Pengembangan Pesan: Meningkatkan kesadaran merek dan penjualan."],
@@ -139,7 +139,7 @@ export default function PortfolioPage() {
       },
       {
         title: "Analisis Media Sosial TukangSayur.co",
-        imageUrl: "https://placehold.co/800x450.png",
+        imageUrl: "/sayur.png",
         imageHint: "data analytics",
         description: "Melakukan analisis mendalam terhadap performa media sosial TukangSayur.co di platform Instagram. Memberikan rekomendasi strategis berdasarkan data untuk peningkatan engagement dan pertumbuhan.",
         details: ["Analisis Profil: Instagram: username, bio, tautan.", "Kinerja Postingan: Frekuensi, jenis konten, waktu, engagement.", "Penggunaan Tools: Analisis dengan Social Blade."],
@@ -147,19 +147,19 @@ export default function PortfolioPage() {
       },
       {
         title: "Kanenakan (Donat) - Konten Kreatif",
-        imageUrl: "https://placehold.co/800x450.png",
+        imageUrl: "/kanenakan.png",
         imageHint: "food content",
         description: "Merancang dan mengimplementasikan strategi konten kreatif untuk Kanenakan (Donat) yang berfokus pada visual produk yang menarik dan peningkatan interaksi pengguna melalui berbagai format konten.",
         details: ["Deskripsi: Mengembangkan strategi konten kreatif rasa dan pengalaman pelanggan.", "Visual: Short copy dan visual donat warna-warni serta close-up.", "Engagement: Reels, foto carousel, UGC, tantangan, dan kontes."],
         tags: ["Content Creation", "Visual Design", "User Engagement"],
       },
       {
-        title: "Proyek Kelima (Placeholder)",
-        imageUrl: "https://placehold.co/800x450.png",
-        imageHint: "project placeholder",
-        description: "Ini adalah deskripsi placeholder untuk proyek kelima Anda. Silakan perbarui dengan detail proyek yang sebenarnya.",
-        details: ["Detail 1 untuk proyek kelima.", "Detail 2 untuk proyek kelima.", "Detail 3 untuk proyek kelima."],
-        tags: ["Teknologi 1", "Teknologi 2", "Placeholder"],
+        title: "Sambal Sarumpet - Warisan Rasa",
+        imageUrl: "/sarumpet.png",
+        imageHint: "food content",
+        description: "Saya	menyusun	copywriting untuk		@sambalsarumpet yang		menekankan	warisan rasa	dan	keautentikan, termasuk  untuk  konsep  take  away.  Strategi  visual  dan engagement saya melibatkan penggunaan gambar close- up sambal dan makanan tradisional, emoji kuliner, serta pertanyaan interaktif. Tone yang saya gunakan bersifat naratif,  persuasif,  dan  santai,  dengan  pesan  inti  bahwa Sambal Sarumpet bukan sekadar pedas, tapi warisan rasa yang tetap autentik di setiap kondisi",
+        details: ["Deskripsi: Mengembangkan strategi konten kreatif rasa dan pengalaman pelanggan.", "Visual: Short copy dan visual donat warna-warni serta close-up.", "Engagement: Reels, foto carousel, UGC, tantangan, dan kontes."],
+        tags: ["Content Creation", "Visual Design", "User Engagement"],
       }
     ],
     contactEmail: "wahyupratomo187@gmail.com",
@@ -196,7 +196,7 @@ export default function PortfolioPage() {
       <Navigation 
         activeSection={activeSection} 
         navLinks={navLinks} 
-        profileName={profileData.name} 
+        profileName={profileData.name}
       />
       <main className="flex-grow pt-16 md:pt-20">
         <HeroSection

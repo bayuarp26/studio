@@ -26,7 +26,7 @@ export default function ContactSection({ id, title, email }: ContactSectionProps
             >
             <Button size="lg" className="w-full text-base md:text-lg">
                 <Send className="mr-2 h-5 w-5" />
-                Kirim Email ke {email.split('@')[0]}
+                Kirim Email ke Saya
             </Button>
             </a>
             <p className="text-xs text-muted-foreground mt-4">

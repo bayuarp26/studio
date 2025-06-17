@@ -28,8 +28,7 @@ export default function Footer({ copyrightName, year, socialLinks }: FooterProps
           </a>
         </Button>
       </div>
-      <p className="text-sm">&copy; {year} {copyrightName}. All rights reserved.</p>
-      <p className="text-xs mt-1 opacity-70">Dibangun dengan Next.js dan Tailwind CSS.</p>
+      <p className="text-sm mb-2 opacity-70">&copy; {year} {copyrightName}. All rights reserved.</p>
     </footer>
   );
 }
