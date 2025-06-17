@@ -157,7 +157,7 @@ export default function PortfolioPage() {
         title: "Sambal Sarumpet - Warisan Rasa",
         imageUrl: "/sarumpet.png",
         imageHint: "food content",
-        description: "Saya	menyusun	copywriting untuk		@sambalsarumpet yang		menekankan	warisan rasa	dan	keautentikan, termasuk  untuk  konsep  take  away.  Strategi  visual  dan engagement saya melibatkan penggunaan gambar close- up sambal dan makanan tradisional, emoji kuliner, serta pertanyaan interaktif. Tone yang saya gunakan bersifat naratif,  persuasif,  dan  santai,  dengan  pesan  inti  bahwa Sambal Sarumpet bukan sekadar pedas, tapi warisan rasa yang tetap autentik di setiap kondisi",
+        description: "Merancang dan mengimplementasikan strategi copywriting untuk @sambalsarumpet yang berfokus pada warisan rasa dan keautentikan, termasuk untuk konsep take away. Strategi visual dan engagement melibatkan penggunaan gambar close-up sambal dan makanan tradisional, emoji kuliner, serta pertanyaan interaktif. Tone naratif, persuasif, dan santai digunakan untuk menyampaikan pesan inti bahwa Sambal Sarumpet bukan sekadar pedas, melainkan warisan rasa yang tetap autentik di setiap kondisi.",
         details: ["Deskripsi: Mengembangkan strategi konten kreatif rasa dan pengalaman pelanggan.", "Visual: Short copy dan visual donat warna-warni serta close-up.", "Engagement: Reels, foto carousel, UGC, tantangan, dan kontes."],
         tags: ["Content Creation", "Visual Design", "User Engagement"],
       }
