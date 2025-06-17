@@ -1,12 +1,11 @@
 
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Github, Linkedin, Twitter, Download } from 'lucide-react';
+import { Github, Linkedin, Download } from 'lucide-react';
 
 interface SocialLinks {
   github: string;
   linkedin: string;
-  twitter?: string;
 }
 
 interface HeroSectionProps {
@@ -60,13 +59,6 @@ export default function HeroSection({ id, name, title, tagline, imageUrl, imageH
                   <Linkedin className="h-5 w-5" />
                 </a>
               </Button>
-              {socialLinks.twitter && (
-                <Button asChild variant="outline" size="icon" className="rounded-full">
-                  <a href={socialLinks.twitter} target="_blank" rel="noopener noreferrer" aria-label="Twitter">
-                    <Twitter className="h-5 w-5" />
-                  </a>
-                </Button>
-              )}
             </div>
           </div>
         </div>

@@ -95,7 +95,6 @@ export default function PortfolioPage() {
     socialLinks: {
       github: "https://github.com/wahyupratomo187",
       linkedin: "https://linkedin.com/in/wahyupratomo",
-      twitter: "https://twitter.com/yourusername",
     },
     cvUrl: "/wahyu-pratomo-cv.pdf", 
     about: {
@@ -242,4 +241,3 @@ export default function PortfolioPage() {
     </div>
   );
 }
-
