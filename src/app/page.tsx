@@ -96,7 +96,7 @@ export default function PortfolioPage() {
       github: "https://github.com/wahyupratomo187",
       linkedin: "https://linkedin.com/in/wahyupratomo",
     },
-    cvUrl: "/download/Wahyu_Pratomo-cv.pdf", 
+    cvUrl: "/download/cv-wahyu-pratomo.pdf", 
     about: {
       imageUrl: "/profile.png", 
       imageHint: "team collaboration",
