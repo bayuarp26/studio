@@ -96,7 +96,7 @@ export default function PortfolioPage() {
       github: "https://github.com/wahyupratomo187",
       linkedin: "https://linkedin.com/in/wahyupratomo",
     },
-    cvUrl: "/wahyu-pratomo-cv.pdf", 
+    cvUrl: "/download/Wahyu_Pratomo-cv.pdf", 
     about: {
       imageUrl: "https://placehold.co/600x450.png",
       imageHint: "team collaboration",
@@ -241,3 +241,4 @@ export default function PortfolioPage() {
     </div>
   );
 }
+
