@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -92,14 +93,14 @@
 }
 
 @layer utilities {
-  .fade-in {
-    animation: fadeIn 0.5s ease-in-out;
+  .slide-up-fade-in {
+    animation: slideUpFadeIn 0.6s ease-out forwards;
   }
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
+  @keyframes slideUpFadeIn {
+    from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
   }
   .section-title {
-    @apply text-3xl font-bold mb-8 border-b-2 border-primary pb-2 inline-block;
+    @apply text-3xl md:text-4xl font-bold mb-10 text-primary relative inline-block pb-2 after:content-[''] after:absolute after:left-0 after:bottom-0 after:w-2/3 after:h-1 after:bg-accent;
   }
 }

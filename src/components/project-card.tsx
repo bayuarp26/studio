@@ -1,20 +1,30 @@
 
 import Image from 'next/image';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Github, ExternalLink } from 'lucide-react';
+
+interface ProjectLink {
+  github?: string;
+  demo?: string;
+}
 
 interface ProjectCardProps {
   imageUrl: string;
   imageHint: string;
   title: string;
   description: string;
-  details: string[];
+  details: string[]; // Kept for potential detailed view, but not prominent in this design
+  tags: string[];
+  links: ProjectLink;
 }
 
-export default function ProjectCard({ imageUrl, imageHint, title, description, details }: ProjectCardProps) {
+export default function ProjectCard({ imageUrl, imageHint, title, description, tags, links }: ProjectCardProps) {
   return (
-    <Card className="overflow-hidden hover:shadow-2xl transition-all transform hover:-translate-y-1 duration-300 rounded-lg bg-card/30 backdrop-blur-md border border-border/50 shadow-lg">
+    <Card className="overflow-hidden bg-card/60 backdrop-blur-md border border-border/50 shadow-lg hover:shadow-xl transition-all duration-300 flex flex-col h-full">
       <CardHeader className="p-0">
-        <div className="relative aspect-video w-full">
+        <div className="relative aspect-[16/9] w-full"> {/* Aspect ratio for project images */}
           <Image
             src={imageUrl}
             alt={title}
@@ -25,27 +35,37 @@ export default function ProjectCard({ imageUrl, imageHint, title, description, d
           />
         </div>
       </CardHeader>
-      <CardContent className="p-6">
-        <CardTitle className="text-xl mb-2 text-foreground">{title}</CardTitle>
-        <p className="text-sm text-foreground/90 mb-4 leading-relaxed">
+      <CardContent className="p-5 flex-grow">
+        <CardTitle className="text-xl lg:text-2xl mb-2 text-foreground">{title}</CardTitle>
+        <CardDescription className="text-sm text-muted-foreground mb-4 leading-relaxed line-clamp-3">
           {description}
-        </p>
-        <div className="space-y-1 text-sm text-muted-foreground">
-          {details.map((detail, index) => {
-            const parts = detail.split(':');
-            if (parts.length > 1) {
-              return (
-                <p key={index}>
-                  <strong className="text-foreground/80">{parts[0]}:</strong> {parts.slice(1).join(':')}
-                </p>
-              );
-            }
-            return <p key={index}>{detail}</p>;
-          })}
+        </CardDescription>
+        <div className="mb-4">
+          {tags.map((tag, index) => (
+            <Badge key={index} variant="secondary" className="mr-2 mb-2 text-xs px-2 py-1">
+              {tag}
+            </Badge>
+          ))}
         </div>
       </CardContent>
+      <CardFooter className="p-5 pt-0 flex gap-3">
+        {links.github && (
+          <Button asChild variant="outline" size="sm">
+            <a href={links.github} target="_blank" rel="noopener noreferrer">
+              <Github className="mr-2 h-4 w-4" />
+              Source
+            </a>
+          </Button>
+        )}
+        {links.demo && (
+          <Button asChild variant="default" size="sm">
+            <a href={links.demo} target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="mr-2 h-4 w-4" />
+              Demo
+            </a>
+          </Button>
+        )}
+      </CardFooter>
     </Card>
   );
 }
-
-    
