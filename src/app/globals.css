@@ -5,78 +5,47 @@
 
 @layer base {
   :root {
-    --background: 0 0% 98%; /* Light Gray #FAFAFA */
-    --foreground: 210 10% 23%; /* Dark Slate Blue/Gray */
+    --background: 215 55% 8%; /* #09121f */
+    --foreground: 210 20% 85%; /* Light gray/off-white for general text */
 
-    --card: 0 0% 100%; /* White */
-    --card-foreground: 210 10% 23%;
+    --card: 215 50% 12%; /* Slightly lighter dark blue for cards */
+    --card-foreground: 210 20% 85%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 210 10% 23%;
+    --popover: 215 50% 12%;
+    --popover-foreground: 210 20% 85%;
 
-    --primary: 174 63% 40%; /* Teal #26A69A */
-    --primary-foreground: 0 0% 100%; /* White */
+    --primary: 48 100% 50%; /* #ffcc02 - for primary actions, headings */
+    --primary-foreground: 215 55% 8%; /* Dark background color for text on yellow primary elements */
 
-    --secondary: 174 50% 96%; /* Very Light Teal #F0FAF9 */
-    --secondary-foreground: 174 25% 35%; /* Darker Teal */
+    --secondary: 215 40% 15%; /* Muted dark blue */
+    --secondary-foreground: 48 100% 50%; /* Yellow text on secondary dark blue buttons */
 
-    --muted: 174 30% 90%; /* Lighter muted teal-gray #DBEBEA */
-    --muted-foreground: 174 15% 45%; /* Medium teal-gray #61817F */
+    --muted: 215 30% 20%;
+    --muted-foreground: 210 20% 65%;
 
-    --accent: 38 92% 60%; /* Light Amber/Gold #F7B84B */
-    --accent-foreground: 24 90% 15%; /* Dark Brown for contrast on Gold */
+    --accent: 48 100% 50%; /* #ffcc02 - for accents */
+    --accent-foreground: 215 55% 8%; /* Dark background color for text on yellow accent elements */
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 70% 45%; /* Darker red for destructive actions */
+    --destructive-foreground: 0 0% 98%; /* Light text on destructive */
 
-    --border: 174 20% 88%; /* Light Teal-Gray Border #D5E5E4 */
-    --input: 174 20% 92%; /* Slightly darker input background #E0ECEA */
-    --ring: 174 70% 50%; /* Brighter Teal for focus rings */
+    --border: 215 30% 25%; /* Subtle dark border */
+    --input: 215 30% 25%;
+    --ring: 48 100% 55%; /* Brighter yellow for focus rings */
     
-    --chart-1: 174 63% 40%; /* Teal - Primary */
-    --chart-2: 38 92% 60%; /* Amber/Gold - Accent */
-    --chart-3: 174 40% 55%; /* Lighter Teal */
-    --chart-4: 38 70% 70%; /* Lighter Amber */
+    --chart-1: 48 100% 50%; /* Yellow */
+    --chart-2: 200 100% 50%; /* A contrasting blue or cyan */
+    --chart-3: 48 80% 60%;  /* Lighter Yellow */
+    --chart-4: 200 80% 60%; /* Lighter Cyan */
     --chart-5: 210 10% 60%; /* Muted Blue/Gray */
     --radius: 0.5rem;
 
     /* Specific for footer */
-    --footer-background: 174 30% 20%; /* Dark Teal for footer #234A47 */
-    --footer-foreground: 174 15% 85%; /* Light text for footer #C9DBD9 */
+    --footer-background: 215 55% 6%; /* Even darker for footer */
+    --footer-foreground: 210 20% 70%;
   }
 
-  .dark {
-    --background: 174 15% 12%; /* Dark Teal-Blue #162625 */
-    --foreground: 174 20% 90%; /* Light Teal-Gray #D9E7E6 */
-
-    --card: 174 15% 18%; /* Darker Teal-Blue Card */
-    --card-foreground: 174 20% 90%;
-
-    --popover: 174 15% 18%;
-    --popover-foreground: 174 20% 90%;
-
-    --primary: 174 55% 55%; /* Slightly lighter/more vibrant teal for dark mode primary #5CB0A9 */
-    --primary-foreground: 0 0% 100%; /* White text on Teal */
-
-    --secondary: 174 30% 25%; /* Darker Teal for dark mode secondary bg */
-    --secondary-foreground: 174 20% 85%;
-
-    --muted: 174 15% 30%; /* Dark muted teal */
-    --muted-foreground: 174 15% 65%; /* Lighter muted teal text */
-
-    --accent: 38 85% 65%; /* Slightly adjusted Amber/Gold for dark mode #F9C56B */
-    --accent-foreground: 24 90% 15%; /* Dark Brown, still works */
-    
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 174 15% 35%; /* Darker Teal border */
-    --input: 174 15% 35%;
-    --ring: 174 60% 65%; /* Teal ring */
-
-    --footer-background: 174 25% 10%; /* Even darker Teal for footer in dark mode #101F1E */
-    --footer-foreground: 174 15% 75%;
-  }
+  /* Removed the .dark block as :root now defines the primary dark theme */
 }
 
 @layer base {
@@ -85,7 +54,7 @@
     font-family: var(--font-inter), sans-serif;
   }
   h1, h2, h3, h4, h5, h6 {
-    @apply font-headline;
+    @apply font-headline text-primary; /* Headings will use the primary color (yellow) */
   }
 }
 
