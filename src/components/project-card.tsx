@@ -1,7 +1,10 @@
 
+"use client"; // Required for the hook
+
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useDynamicCardEffect } from '@/hooks/useDynamicCardEffect'; // Adjust path if necessary
 
 interface ProjectCardProps {
   imageUrl: string;
@@ -13,8 +16,18 @@ interface ProjectCardProps {
 }
 
 export default function ProjectCard({ imageUrl, imageHint, title, description, tags }: ProjectCardProps) {
+  const cardRef = useDynamicCardEffect<HTMLDivElement>({
+    // You can override default options here if needed, e.g.:
+    // maxRotation: 10,
+    // scaleAmount: 1.06,
+  });
+
   return (
-    <Card className="overflow-hidden bg-card border border-border shadow-lg transition-shadow duration-300 ease-out hover:shadow-xl flex flex-col h-full">
+    <Card 
+      ref={cardRef} 
+      className="overflow-hidden bg-card border border-border shadow-lg flex flex-col h-full [transform-style:preserve-3d]"
+      // Initial transition and box-shadow are now set by the hook
+    >
       <CardHeader className="p-0">
         <div className="relative aspect-[16/9] w-full">
           <Image

@@ -1,32 +1,41 @@
 
+"use client"; // Required for the hook
+
 import SectionContainer from './section-container';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card'; // CardHeader, CardTitle removed as not used directly
 import { Button } from '@/components/ui/button';
-import { Mail, Send, Linkedin } from 'lucide-react'; // Added Linkedin icon
+import { Send, Linkedin } from 'lucide-react';
+import { useDynamicCardEffect } from '@/hooks/useDynamicCardEffect'; // Adjust path if necessary
 
 interface SocialLinks {
-  // Only linkedin is needed here, but keep it open for future if necessary
   linkedin: string;
-  // github?: string; // Add if other social links are needed in contact section
 }
 
 interface ContactSectionProps {
   id: string;
   title: string;
   email: string;
-  socialLinks: SocialLinks; // Added socialLinks prop
+  socialLinks: SocialLinks;
 }
 
 export default function ContactSection({ id, title, email, socialLinks }: ContactSectionProps) {
+  const contactCardRef = useDynamicCardEffect<HTMLDivElement>({
+     defaultBoxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)' // Tailwind shadow-xl
+  });
+
   return (
-    <SectionContainer id={id} className="bg-secondary"> {/* Light gray secondary background */}
+    <SectionContainer id={id} className="bg-secondary">
       <div className="max-w-xl mx-auto text-center">
         <h2 id={`${id}-heading`} className="section-title inline-block">{title}</h2>
         <p className="text-lg text-muted-foreground mb-8 mt-[-1.5rem]">
           Saya selalu terbuka untuk diskusi, kolaborasi, atau sekadar menyapa. Jangan ragu untuk menghubungi!
         </p>
-        <div> {/* Removed perspective wrapper */}
-          <Card className="bg-card shadow-xl border border-border transition-shadow duration-300 ease-out hover:shadow-2xl"> {/* Removed 3D hover classes */}
+        <div className="[perspective:1000px]"> {/* Perspective wrapper for 3D effect */}
+          <Card 
+            ref={contactCardRef} 
+            className="bg-card shadow-xl border border-border [transform-style:preserve-3d]"
+            // Initial transition and box-shadow are now set by the hook
+          >
             <CardContent className="p-6 md:p-8 space-y-4">
               <a
                 href={`mailto:${email}`}
