@@ -28,21 +28,25 @@ export async function updateProfileImageAction(
     }
 
     const validatedDataUri = validationResult.data.heroImageUrl;
-
     const pageFilePath = path.join(process.cwd(), 'src', 'app', 'page.tsx');
     let fileContent = await fs.readFile(pageFilePath, 'utf-8');
 
-    // Regex to find heroImageUrl: "..." or heroImageUrl: '...'
-    // It captures the part inside the quotes.
-    const regex = /(heroImageUrl:\s*["'])(.*?)(["'])/;
-    
-    if (!regex.test(fileContent)) {
-      console.error("heroImageUrl pattern not found in src/app/page.tsx. Content:", fileContent.substring(0, 500));
+    // Regex untuk heroImageUrl
+    const heroRegex = /(heroImageUrl:\s*["'])(.*?)(["'])/;
+    if (!heroRegex.test(fileContent)) {
+      console.error("heroImageUrl pattern not found in src/app/page.tsx.");
       return { success: false, error: "Pola heroImageUrl tidak ditemukan di src/app/page.tsx. Periksa format file." };
     }
+    fileContent = fileContent.replace(heroRegex, `$1${validatedDataUri}$3`);
 
-    // Replace the existing URL with the new Data URI, ensuring quotes are preserved or set.
-    fileContent = fileContent.replace(regex, `$1${validatedDataUri}$3`);
+    // Regex untuk about.imageUrl
+    // Mencari 'about: {' kemudian karakter apa pun (non-greedy) hingga 'imageUrl: "'
+    const aboutImageRegex = /(about:\s*\{\s*[\s\S]*?imageUrl:\s*["'])(.*?)(["'])/;
+    if (!aboutImageRegex.test(fileContent)) {
+      console.error("about.imageUrl pattern not found in src/app/page.tsx. About image will not be updated.");
+      return { success: false, error: "Pola about.imageUrl tidak ditemukan di src/app/page.tsx. Pembaruan foto gagal total." };
+    }
+    fileContent = fileContent.replace(aboutImageRegex, `$1${validatedDataUri}$3`);
     
     await fs.writeFile(pageFilePath, fileContent, 'utf-8');
 
@@ -139,3 +143,4 @@ export async function deleteSkillAction(
     return { success: false, error: errorMessage };
   }
 }
+
