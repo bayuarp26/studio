@@ -118,8 +118,8 @@ export default function AdminProfileClientContent({ initialData, serverError }: 
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="[perspective:1000px]">
-          <Card className="shadow-lg [transform-style:preserve-3d] transition-all duration-300 ease-out hover:[transform:rotateY(-7deg)_scale(1.05)] hover:shadow-2xl h-full">
+        <div> {/* Removed perspective wrapper */}
+          <Card className="shadow-lg h-full transition-shadow hover:shadow-md">  {/* Removed 3D hover classes */}
             <CardHeader>
               <CardTitle className="flex items-center text-primary">
                 <ImageUp className="mr-2 h-5 w-5" />
@@ -133,8 +133,8 @@ export default function AdminProfileClientContent({ initialData, serverError }: 
           </Card>
         </div>
 
-        <div className="[perspective:1000px]">
-          <Card className="shadow-lg [transform-style:preserve-3d] transition-all duration-300 ease-out hover:[transform:rotateY(-7deg)_scale(1.05)] hover:shadow-2xl h-full">
+        <div> {/* Removed perspective wrapper */}
+          <Card className="shadow-lg h-full transition-shadow hover:shadow-md"> {/* Removed 3D hover classes */}
             <CardHeader>
               <CardTitle className="flex items-center text-primary">
                 <UserCog className="mr-2 h-5 w-5" />
@@ -148,8 +148,8 @@ export default function AdminProfileClientContent({ initialData, serverError }: 
           </Card>
         </div>
 
-        <div className="[perspective:1000px]">
-          <Card className="shadow-lg [transform-style:preserve-3d] transition-all duration-300 ease-out hover:[transform:rotateY(-7deg)_scale(1.05)] hover:shadow-2xl h-full">
+        <div> {/* Removed perspective wrapper */}
+          <Card className="shadow-lg h-full transition-shadow hover:shadow-md"> {/* Removed 3D hover classes */}
             <CardHeader>
               <CardTitle className="flex items-center text-primary">
                 <FileText className="mr-2 h-5 w-5" />
@@ -163,8 +163,8 @@ export default function AdminProfileClientContent({ initialData, serverError }: 
           </Card>
         </div>
 
-        <div className="[perspective:1000px]">
-          <Card className="shadow-lg [transform-style:preserve-3d] transition-all duration-300 ease-out hover:[transform:rotateY(-7deg)_scale(1.05)] hover:shadow-2xl h-full">
+        <div> {/* Removed perspective wrapper */}
+          <Card className="shadow-lg h-full transition-shadow hover:shadow-md"> {/* Removed 3D hover classes */}
             <CardHeader>
               <CardTitle className="flex items-center text-primary">
                 <KeyRound className="mr-2 h-5 w-5" />

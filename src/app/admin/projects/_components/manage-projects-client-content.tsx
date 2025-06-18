@@ -104,8 +104,8 @@ export default function ManageProjectsClientContent({ initialProjects, serverErr
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {projectsToDisplay.map((project) => (
-            <div key={project._id} className="[perspective:1000px]">
-              <Card className="flex flex-col overflow-hidden shadow-lg [transform-style:preserve-3d] transition-all duration-300 ease-out hover:[transform:rotateY(-7deg)_scale(1.05)] hover:shadow-2xl">
+            <div key={project._id}> {/* Removed perspective wrapper */}
+              <Card className="flex flex-col overflow-hidden shadow-lg transition-shadow hover:shadow-md"> {/* Removed 3D hover classes */}
                 <CardHeader className="p-0">
                   <div className="relative aspect-[16/9] w-full">
                     <Image
