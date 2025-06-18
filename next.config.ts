@@ -31,7 +31,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  serverComponentsExternalPackages: ['bcrypt'], // Added bcrypt here
+  serverComponentsExternalPackages: ['bcrypt', '@mapbox/node-pre-gyp'],
 };
 
 export default nextConfig;
