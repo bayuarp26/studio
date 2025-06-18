@@ -104,7 +104,7 @@ export default function ManageProjectsClientContent({ initialProjects, serverErr
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {projectsToDisplay.map((project) => (
-            <Card key={project._id} className="flex flex-col overflow-hidden shadow-lg transition-all duration-200 ease-out hover:scale-[0.98] hover:shadow-md hover:brightness-[0.97]">
+            <Card key={project._id} className="flex flex-col overflow-hidden shadow-lg transition-all duration-200 ease-out hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-inner hover:brightness-95">
               <CardHeader className="p-0">
                 <div className="relative aspect-[16/9] w-full">
                   <Image
