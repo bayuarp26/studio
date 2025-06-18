@@ -20,9 +20,11 @@ import { useToast } from "@/hooks/use-toast";
 import { addProjectAction } from "./actions";
 import SectionContainer from "@/components/section-container";
 import Link from 'next/link';
-import { ListOrdered, UploadCloud, XCircle, UserCog, Home } from 'lucide-react'; // Added UserCog, Home
+import { ListOrdered, UploadCloud, XCircle, UserCog, Home, PlusCircle, LogOut } from 'lucide-react';
 import Image from "next/image";
 import { useCallback, useState } from "react";
+import { useRouter } from "next/navigation";
+import { logoutAction } from "../profile/actions"; // Assuming logoutAction is in profile/actions
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
@@ -52,6 +54,7 @@ export type ProjectFormValues = z.infer<typeof projectFormSchema>;
 
 export default function AddProjectPage() {
   const { toast } = useToast();
+  const router = useRouter();
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -147,13 +150,30 @@ export default function AddProjectPage() {
       });
     }
   }
+  
+  const handleLogout = async () => {
+    const result = await logoutAction();
+    if (result.success) {
+      toast({
+        title: "Logout Berhasil",
+        description: "Anda telah berhasil logout.",
+      });
+      router.push("/login");
+    } else {
+       toast({
+        variant: "destructive",
+        title: "Logout Gagal",
+        description: "Terjadi kesalahan saat logout.",
+      });
+    }
+  };
 
   return (
     <SectionContainer id="add-project-admin" className="bg-background min-h-screen pt-24 md:pt-32">
       <div className="max-w-2xl mx-auto">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10">
             <h1 className="section-title mb-4 sm:mb-0">Tambah Proyek Baru</h1>
-            <div className="flex flex-col sm:flex-row gap-2 mt-4 sm:mt-0">
+            <div className="flex flex-wrap gap-2 mt-4 sm:mt-0">
                 <Button asChild variant="outline">
                   <Link href="/admin/projects">
                     <ListOrdered className="mr-2 h-4 w-4" />
@@ -171,6 +191,10 @@ export default function AddProjectPage() {
                     <Home className="mr-2 h-4 w-4" />
                     Halaman Utama
                   </Link>
+                </Button>
+                 <Button variant="destructive" onClick={handleLogout}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Logout
                 </Button>
             </div>
         </div>

@@ -31,6 +31,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  serverComponentsExternalPackages: ['bcrypt'], // Added bcrypt here
 };
 
 export default nextConfig;

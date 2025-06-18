@@ -8,6 +8,10 @@ import type { MongoClient, Collection, Document, ObjectId } from 'mongodb';
 import fs from 'fs/promises';
 import path from 'path';
 import type { SkillData } from "@/app/page"; // Ensure correct path
+import { cookies } from "next/headers";
+import { hashPassword, comparePassword, createSessionToken } from "@/lib/authUtils";
+
+const ADMIN_AUTH_COOKIE_NAME = 'admin-auth-token';
 
 const profileImageSchema = z.object({
   heroImageUrl: z.string().refine(val => val.startsWith('data:image/'), {
@@ -26,6 +30,16 @@ const cvFileSchema = z.instanceof(File)
     (file) => ACCEPTED_CV_TYPES.includes(file.type),
     "Format file CV tidak valid. Harap unggah file PDF."
   );
+
+const adminCredentialsSchema = z.object({
+  currentPassword: z.string().min(1, "Password saat ini tidak boleh kosong."),
+  newUsername: z.string().min(1, "Username baru tidak boleh kosong."),
+  newPassword: z.string().min(6, "Password baru minimal 6 karakter."),
+});
+interface AdminUserDocument extends Document {
+  username: string;
+  hashedPassword?: string;
+}
 
 
 export async function updateProfileImageAction(
@@ -52,9 +66,11 @@ export async function updateProfileImageAction(
     const aboutImageRegex = /(about:\s*\{\s*[\s\S]*?imageUrl:\s*["'])(.*?)(["'])/;
     if (!aboutImageRegex.test(fileContent)) {
       console.error("about.imageUrl pattern not found in src/app/page.tsx. About image will not be updated.");
-      return { success: false, error: "Pola about.imageUrl tidak ditemukan di src/app/page.tsx. Pembaruan foto gagal total." };
+      // If critical, return error. If not, log and proceed.
+      // return { success: false, error: "Pola about.imageUrl tidak ditemukan. Pembaruan foto gagal total." };
+    } else {
+      fileContent = fileContent.replace(aboutImageRegex, `$1${validatedDataUri}$3`);
     }
-    fileContent = fileContent.replace(aboutImageRegex, `$1${validatedDataUri}$3`);
     
     await fs.writeFile(pageFilePath, fileContent, 'utf-8');
 
@@ -130,7 +146,9 @@ export async function deleteSkillAction(
     const db = client.db();
     const skillsCollection: Collection<Document> = db.collection("skills");
     
-    const result = await skillsCollection.deleteOne({ _id: new (require('mongodb').ObjectId)(skillId) });
+    // Ensure ObjectId is correctly imported and used if your IDs are ObjectIds
+    const { ObjectId } = require('mongodb');
+    const result = await skillsCollection.deleteOne({ _id: new ObjectId(skillId) });
 
     if (result.deletedCount === 1) {
       revalidatePath("/");
@@ -168,37 +186,28 @@ export async function updateCVAction(
     }
 
     const validatedFile = validationResult.data;
-    const newFilename = "Wahyu_Pratomo-cv.pdf"; // Fixed filename
+    const newFilename = "Wahyu_Pratomo-cv.pdf"; 
     const publicDir = path.join(process.cwd(), 'public');
     const downloadDir = path.join(publicDir, 'download');
     const cvFilePath = path.join(downloadDir, newFilename);
 
-    // Ensure download directory exists
     await fs.mkdir(downloadDir, { recursive: true });
 
-    // Save the file
     const bytes = await validatedFile.arrayBuffer();
     const buffer = Buffer.from(bytes);
     await fs.writeFile(cvFilePath, buffer);
 
-    // Update cvUrl in src/app/page.tsx to ensure it's correct
     const pageFilePath = path.join(process.cwd(), 'src', 'app', 'page.tsx');
     let fileContent = await fs.readFile(pageFilePath, 'utf-8');
     
     const cvUrlRegex = /(cvUrl:\s*["'])(.*?)(["'])/;
     const newCvUrl = `/download/${newFilename}`;
-
-    if (!cvUrlRegex.test(fileContent)) {
-        console.warn("cvUrl pattern not found in src/app/page.tsx. It might be a new setup or the pattern changed.");
-        // Attempt to add it if a known structure exists, or handle as appropriate.
-        // For now, we'll assume it might need to be updated if present.
-    }
     
     fileContent = fileContent.replace(cvUrlRegex, `$1${newCvUrl}$3`);
     await fs.writeFile(pageFilePath, fileContent, 'utf-8');
 
-    revalidatePath('/'); // Revalidate home page
-    revalidatePath('/admin/profile'); // Revalidate admin page
+    revalidatePath('/'); 
+    revalidatePath('/admin/profile'); 
     return { success: true };
 
   } catch (error) {
@@ -209,4 +218,60 @@ export async function updateCVAction(
     }
     return { success: false, error: errorMessage };
   }
+}
+
+export async function updateAdminCredentialsAction(
+  data: z.infer<typeof adminCredentialsSchema>
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const validationResult = adminCredentialsSchema.safeParse(data);
+    if (!validationResult.success) {
+      const firstError = Object.values(validationResult.error.flatten().fieldErrors)[0]?.[0];
+      return { success: false, error: firstError || "Data input tidak valid." };
+    }
+
+    const { currentPassword, newUsername, newPassword } = validationResult.data;
+
+    const client: MongoClient = await clientPromise;
+    const db = client.db();
+    const adminUsersCollection: Collection<AdminUserDocument> = db.collection("admin_users");
+
+    // Assuming there's only one admin user or you identify them uniquely.
+    // For this simple case, we fetch the first admin user.
+    // In a multi-admin system, you'd need a way to identify which admin is logged in.
+    const adminUser = await adminUsersCollection.findOne({}); 
+
+    if (!adminUser || !adminUser.hashedPassword) {
+      return { success: false, error: "Pengguna admin tidak ditemukan atau konfigurasi salah." };
+    }
+
+    const isCurrentPasswordValid = await comparePassword(currentPassword, adminUser.hashedPassword);
+    if (!isCurrentPasswordValid) {
+      return { success: false, error: "Password saat ini salah." };
+    }
+
+    const newHashedPassword = await hashPassword(newPassword);
+    await adminUsersCollection.updateOne(
+      { _id: adminUser._id },
+      { $set: { username: newUsername, hashedPassword: newHashedPassword } }
+    );
+
+    // Re-issue a new token with the new username if it changed, and clear old one.
+    // Or, simply log out and force re-login for simplicity.
+    // For this iteration, we'll log them out to ensure the new credentials are used for a new session.
+    cookies().delete(ADMIN_AUTH_COOKIE_NAME);
+    
+    revalidatePath("/admin/profile");
+    return { success: true };
+
+  } catch (error) {
+    console.error("Error in updateAdminCredentialsAction:", error);
+    return { success: false, error: "Terjadi kesalahan server saat memperbarui kredensial." };
+  }
+}
+
+export async function logoutAction(): Promise<{ success: boolean }> {
+  cookies().delete(ADMIN_AUTH_COOKIE_NAME);
+  return { success: true };
+  // Client-side will handle redirect after this.
 }
