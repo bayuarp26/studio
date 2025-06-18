@@ -1,4 +1,4 @@
-import bcrypt from 'bcrypt';
+import bcryptjs from 'bcryptjs';
 import { SignJWT, jwtVerify } from 'jose';
 import type { JWTPayload } from 'jose';
 
@@ -15,11 +15,11 @@ const audience = 'urn:portfolio:audience';
 const expiresAt = '2h'; // Token expires in 2 hours
 
 export async function hashPassword(password: string): Promise<string> {
-  return bcrypt.hash(password, saltRounds);
+  return bcryptjs.hash(password, saltRounds);
 }
 
 export async function comparePassword(password: string, hash: string): Promise<boolean> {
-  return bcrypt.compare(password, hash);
+  return bcryptjs.compare(password, hash);
 }
 
 export interface AdminJWTPayload extends JWTPayload {
