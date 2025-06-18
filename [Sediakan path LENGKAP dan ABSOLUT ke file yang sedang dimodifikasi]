@@ -1,4 +1,0 @@
-... ]]></content>`**:
-    *   Ini adalah bagian yang paling krusial. Tag `<content>` harus berisi **SELURUH ISI AKHIR** dari file setelah perubahan diterapkan.
-    *   Saya **tidak** boleh hanya memberikan baris yang berubah atau potongan kode. Saya harus menyediakan keseluruhan konten file dari awal hingga akhir, persis seperti yang seharusnya terlihat setelah modifikasi.
-    *   `<![CDATA[ ...
