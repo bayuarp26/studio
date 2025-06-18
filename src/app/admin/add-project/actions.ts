@@ -82,9 +82,8 @@ export async function addProjectAction(
     if (error instanceof Error) {
         errorMessage = error.message;
     }
-    if (error instanceof z.ZodError) {
-        errorMessage = error.errors.map(e => e.message).join(', ');
-    }
+    // Removed redundant ZodError check as safeParse is used above
     return { success: false, error: errorMessage };
   }
 }
+
