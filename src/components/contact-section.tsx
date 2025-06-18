@@ -25,38 +25,40 @@ export default function ContactSection({ id, title, email, socialLinks }: Contac
         <p className="text-lg text-muted-foreground mb-8 mt-[-1.5rem]">
           Saya selalu terbuka untuk diskusi, kolaborasi, atau sekadar menyapa. Jangan ragu untuk menghubungi!
         </p>
-        <Card className="bg-card shadow-xl border border-border transition-all duration-200 ease-out hover:shadow-inner hover:brightness-95">
-          <CardContent className="p-6 md:p-8 space-y-4">
-            <a
-              href={`mailto:${email}`}
-              className="w-full block"
-            >
-            <Button size="lg" className="w-full text-base md:text-lg">
-                <Send className="mr-2 h-5 w-5" />
-                Kirim Email
-            </Button>
-            </a>
-            {socialLinks.linkedin && (
+        <div className="[perspective:1000px]">
+          <Card className="bg-card shadow-xl border border-border [transform-style:preserve-3d] transition-all duration-300 ease-out hover:[transform:rotateY(-7deg)_scale(1.05)] hover:shadow-2xl">
+            <CardContent className="p-6 md:p-8 space-y-4">
               <a
-                href={socialLinks.linkedin}
-                target="_blank"
-                rel="noopener noreferrer"
+                href={`mailto:${email}`}
                 className="w-full block"
               >
-                <Button
-                  size="lg"
-                  className="w-full text-base md:text-lg bg-blue-600 text-white hover:bg-blue-700"
-                >
-                  <Linkedin className="mr-2 h-5 w-5" />
-                  Terhubung di LinkedIn
-                </Button>
+              <Button size="lg" className="w-full text-base md:text-lg">
+                  <Send className="mr-2 h-5 w-5" />
+                  Kirim Email
+              </Button>
               </a>
-            )}
-            <p className="text-xs text-muted-foreground pt-2">
-              Email: <strong className="text-foreground">{email}</strong>
-            </p>
-          </CardContent>
-        </Card>
+              {socialLinks.linkedin && (
+                <a
+                  href={socialLinks.linkedin}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full block"
+                >
+                  <Button
+                    size="lg"
+                    className="w-full text-base md:text-lg bg-blue-600 text-white hover:bg-blue-700"
+                  >
+                    <Linkedin className="mr-2 h-5 w-5" />
+                    Terhubung di LinkedIn
+                  </Button>
+                </a>
+              )}
+              <p className="text-xs text-muted-foreground pt-2">
+                Email: <strong className="text-foreground">{email}</strong>
+              </p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </SectionContainer>
   );

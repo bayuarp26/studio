@@ -14,7 +14,7 @@ interface ProjectCardProps {
 
 export default function ProjectCard({ imageUrl, imageHint, title, description, tags }: ProjectCardProps) {
   return (
-    <Card className="overflow-hidden bg-card border border-border shadow-lg transition-all duration-200 ease-out hover:shadow-inner hover:brightness-95 flex flex-col h-full">
+    <Card className="overflow-hidden bg-card border border-border shadow-lg [transform-style:preserve-3d] transition-all duration-300 ease-out hover:[transform:rotateY(-7deg)_scale(1.05)] hover:shadow-2xl flex flex-col h-full">
       <CardHeader className="p-0">
         <div className="relative aspect-[16/9] w-full">
           <Image

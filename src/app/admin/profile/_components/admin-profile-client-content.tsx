@@ -118,57 +118,65 @@ export default function AdminProfileClientContent({ initialData, serverError }: 
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <Card className="shadow-lg transition-all duration-200 ease-out hover:shadow-inner hover:brightness-95">
-          <CardHeader>
-            <CardTitle className="flex items-center text-primary">
-              <ImageUp className="mr-2 h-5 w-5" />
-              Ganti Foto Profil
-            </CardTitle>
-            <CardDescription>Unggah foto profil baru. Foto di halaman utama dan "Tentang Saya" akan diganti.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <UpdateProfileImageForm currentImageUrl={data.currentHeroImageUrl} />
-          </CardContent>
-        </Card>
+        <div className="[perspective:1000px]">
+          <Card className="shadow-lg [transform-style:preserve-3d] transition-all duration-300 ease-out hover:[transform:rotateY(-7deg)_scale(1.05)] hover:shadow-2xl h-full">
+            <CardHeader>
+              <CardTitle className="flex items-center text-primary">
+                <ImageUp className="mr-2 h-5 w-5" />
+                Ganti Foto Profil
+              </CardTitle>
+              <CardDescription>Unggah foto profil baru. Foto di halaman utama dan "Tentang Saya" akan diganti.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <UpdateProfileImageForm currentImageUrl={data.currentHeroImageUrl} />
+            </CardContent>
+          </Card>
+        </div>
 
-        <Card className="shadow-lg transition-all duration-200 ease-out hover:shadow-inner hover:brightness-95">
-          <CardHeader>
-            <CardTitle className="flex items-center text-primary">
-              <UserCog className="mr-2 h-5 w-5" />
-              Kelola Keahlian Utama
-            </CardTitle>
-            <CardDescription>Tambah atau hapus keahlian yang ditampilkan di halaman utama.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ManageSkillsSection initialSkills={data.skills} />
-          </CardContent>
-        </Card>
+        <div className="[perspective:1000px]">
+          <Card className="shadow-lg [transform-style:preserve-3d] transition-all duration-300 ease-out hover:[transform:rotateY(-7deg)_scale(1.05)] hover:shadow-2xl h-full">
+            <CardHeader>
+              <CardTitle className="flex items-center text-primary">
+                <UserCog className="mr-2 h-5 w-5" />
+                Kelola Keahlian Utama
+              </CardTitle>
+              <CardDescription>Tambah atau hapus keahlian yang ditampilkan di halaman utama.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ManageSkillsSection initialSkills={data.skills} />
+            </CardContent>
+          </Card>
+        </div>
 
-        <Card className="shadow-lg transition-all duration-200 ease-out hover:shadow-inner hover:brightness-95">
-          <CardHeader>
-            <CardTitle className="flex items-center text-primary">
-              <FileText className="mr-2 h-5 w-5" />
-              Ganti File CV
-            </CardTitle>
-            <CardDescription>Unggah file CV baru dalam format PDF. File saat ini akan diganti.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <UpdateCVForm currentCvUrl={data.currentCvUrl} />
-          </CardContent>
-        </Card>
+        <div className="[perspective:1000px]">
+          <Card className="shadow-lg [transform-style:preserve-3d] transition-all duration-300 ease-out hover:[transform:rotateY(-7deg)_scale(1.05)] hover:shadow-2xl h-full">
+            <CardHeader>
+              <CardTitle className="flex items-center text-primary">
+                <FileText className="mr-2 h-5 w-5" />
+                Ganti File CV
+              </CardTitle>
+              <CardDescription>Unggah file CV baru dalam format PDF. File saat ini akan diganti.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <UpdateCVForm currentCvUrl={data.currentCvUrl} />
+            </CardContent>
+          </Card>
+        </div>
 
-        <Card className="shadow-lg transition-all duration-200 ease-out hover:shadow-inner hover:brightness-95">
-          <CardHeader>
-            <CardTitle className="flex items-center text-primary">
-              <KeyRound className="mr-2 h-5 w-5" />
-              Ubah Kredensial Admin
-            </CardTitle>
-            <CardDescription>Ganti username atau password untuk login admin.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <UpdateAdminCredentialsForm />
-          </CardContent>
-        </Card>
+        <div className="[perspective:1000px]">
+          <Card className="shadow-lg [transform-style:preserve-3d] transition-all duration-300 ease-out hover:[transform:rotateY(-7deg)_scale(1.05)] hover:shadow-2xl h-full">
+            <CardHeader>
+              <CardTitle className="flex items-center text-primary">
+                <KeyRound className="mr-2 h-5 w-5" />
+                Ubah Kredensial Admin
+              </CardTitle>
+              <CardDescription>Ganti username atau password untuk login admin.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <UpdateAdminCredentialsForm />
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </SectionContainer>
   );

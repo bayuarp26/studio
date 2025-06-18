@@ -23,15 +23,16 @@ export default function ProjectsSection({ id, title, projects }: ProjectsSection
       <h2 id={`${id}-heading`} className="section-title text-center md:text-left">{title}</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-10">
         {projects.map((project, index) => (
-          <ProjectCard
-            key={index}
-            title={project.title}
-            imageUrl={project.imageUrl}
-            imageHint={project.imageHint}
-            description={project.description}
-            details={project.details}
-            tags={project.tags}
-          />
+          <div key={index} className="[perspective:1000px]">
+            <ProjectCard
+              title={project.title}
+              imageUrl={project.imageUrl}
+              imageHint={project.imageHint}
+              description={project.description}
+              details={project.details}
+              tags={project.tags}
+            />
+          </div>
         ))}
       </div>
     </SectionContainer>

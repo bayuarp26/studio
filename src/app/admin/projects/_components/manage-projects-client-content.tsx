@@ -104,40 +104,42 @@ export default function ManageProjectsClientContent({ initialProjects, serverErr
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {projectsToDisplay.map((project) => (
-            <Card key={project._id} className="flex flex-col overflow-hidden shadow-lg transition-all duration-200 ease-out hover:shadow-inner hover:brightness-95">
-              <CardHeader className="p-0">
-                <div className="relative aspect-[16/9] w-full">
-                  <Image
-                    src={project.imageUrl}
-                    alt={project.title}
-                    data-ai-hint={project.imageHint}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  />
-                </div>
-              </CardHeader>
-              <CardContent className="p-4 flex-grow">
-                <CardTitle className="text-lg lg:text-xl mb-1 text-primary line-clamp-2">{project.title}</CardTitle>
-                <CardDescription className="text-xs text-muted-foreground line-clamp-3 mb-2">
-                  {project.description}
-                </CardDescription>
-                <div className="flex flex-wrap gap-1 mb-1">
-                    {project.tags.slice(0, 4).map((tag, index) => (
-                       <Badge key={index} variant="secondary" className="text-xs px-1.5 py-0.5">{tag}</Badge>
-                    ))}
-                    {project.tags.length > 4 && <Badge variant="outline" className="text-xs px-1.5 py-0.5">+{project.tags.length - 4}</Badge>}
-                </div>
-                 {project.createdAt && (
-                  <p className="text-xs text-muted-foreground/70 mt-1">
-                    Dibuat: {new Date(project.createdAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
-                  </p>
-                )}
-              </CardContent>
-              <CardFooter className="p-3 border-t bg-muted/30 flex justify-end space-x-2">
-                <DeleteProjectButton projectId={project._id} projectTitle={project.title} />
-              </CardFooter>
-            </Card>
+            <div key={project._id} className="[perspective:1000px]">
+              <Card className="flex flex-col overflow-hidden shadow-lg [transform-style:preserve-3d] transition-all duration-300 ease-out hover:[transform:rotateY(-7deg)_scale(1.05)] hover:shadow-2xl">
+                <CardHeader className="p-0">
+                  <div className="relative aspect-[16/9] w-full">
+                    <Image
+                      src={project.imageUrl}
+                      alt={project.title}
+                      data-ai-hint={project.imageHint}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    />
+                  </div>
+                </CardHeader>
+                <CardContent className="p-4 flex-grow">
+                  <CardTitle className="text-lg lg:text-xl mb-1 text-primary line-clamp-2">{project.title}</CardTitle>
+                  <CardDescription className="text-xs text-muted-foreground line-clamp-3 mb-2">
+                    {project.description}
+                  </CardDescription>
+                  <div className="flex flex-wrap gap-1 mb-1">
+                      {project.tags.slice(0, 4).map((tag, index) => (
+                         <Badge key={index} variant="secondary" className="text-xs px-1.5 py-0.5">{tag}</Badge>
+                      ))}
+                      {project.tags.length > 4 && <Badge variant="outline" className="text-xs px-1.5 py-0.5">+{project.tags.length - 4}</Badge>}
+                  </div>
+                   {project.createdAt && (
+                    <p className="text-xs text-muted-foreground/70 mt-1">
+                      Dibuat: {new Date(project.createdAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    </p>
+                  )}
+                </CardContent>
+                <CardFooter className="p-3 border-t bg-muted/30 flex justify-end space-x-2">
+                  <DeleteProjectButton projectId={project._id} projectTitle={project.title} />
+                </CardFooter>
+              </Card>
+            </div>
           ))}
         </div>
       )}
