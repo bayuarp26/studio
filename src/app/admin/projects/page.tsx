@@ -8,7 +8,7 @@ import SectionContainer from '@/components/section-container';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Edit3 } from 'lucide-react'; // Edit3 can be for a future edit button
+import { PlusCircle, Edit3, UserCog, Home } from 'lucide-react'; // Added UserCog
 
 // This interface should match the data structure used for projects
 interface ProjectData {
@@ -62,12 +62,26 @@ export default async function ManageProjectsPage() {
     <SectionContainer id="manage-projects-admin" className="bg-background min-h-screen pt-24 md:pt-32">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10">
         <h1 className="section-title mb-4 sm:mb-0">Kelola Proyek</h1>
-        <Button asChild size="lg">
-          <Link href="/admin/add-project">
-            <PlusCircle className="mr-2 h-5 w-5" />
-            Tambah Proyek Baru
-          </Link>
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-2 mt-4 sm:mt-0">
+            <Button asChild size="lg">
+              <Link href="/admin/add-project">
+                <PlusCircle className="mr-2 h-5 w-5" />
+                Tambah Proyek Baru
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
+                <Link href="/admin/profile">
+                    <UserCog className="mr-2 h-4 w-4" />
+                    Pengaturan Profil
+                </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/">
+                <Home className="mr-2 h-4 w-4" />
+                Halaman Utama
+              </Link>
+            </Button>
+        </div>
       </div>
 
       {projects.length === 0 ? (

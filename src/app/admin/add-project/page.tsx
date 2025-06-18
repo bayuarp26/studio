@@ -20,7 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { addProjectAction } from "./actions";
 import SectionContainer from "@/components/section-container";
 import Link from 'next/link';
-import { ListOrdered, UploadCloud, XCircle } from 'lucide-react';
+import { ListOrdered, UploadCloud, XCircle, UserCog, Home } from 'lucide-react'; // Added UserCog, Home
 import Image from "next/image";
 import { useCallback, useState } from "react";
 
@@ -153,12 +153,26 @@ export default function AddProjectPage() {
       <div className="max-w-2xl mx-auto">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10">
             <h1 className="section-title mb-4 sm:mb-0">Tambah Proyek Baru</h1>
-            <Button asChild variant="outline">
-              <Link href="/admin/projects">
-                <ListOrdered className="mr-2 h-4 w-4" />
-                Lihat Semua Proyek
-              </Link>
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-2 mt-4 sm:mt-0">
+                <Button asChild variant="outline">
+                  <Link href="/admin/projects">
+                    <ListOrdered className="mr-2 h-4 w-4" />
+                    Semua Proyek
+                  </Link>
+                </Button>
+                <Button asChild variant="outline">
+                    <Link href="/admin/profile">
+                        <UserCog className="mr-2 h-4 w-4" />
+                        Pengaturan Profil
+                    </Link>
+                </Button>
+                 <Button asChild variant="outline">
+                  <Link href="/">
+                    <Home className="mr-2 h-4 w-4" />
+                    Halaman Utama
+                  </Link>
+                </Button>
+            </div>
         </div>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -330,5 +344,3 @@ export default function AddProjectPage() {
     </SectionContainer>
   );
 }
-
-    
