@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -19,15 +20,15 @@ import {
   DialogFooter
 } from "@/components/ui/dialog";
 import { useIsMobile } from "@/hooks/use-mobile";
-import type { ProfileDataType } from './page';
+import type { PortfolioDataType } from './page'; // Menggunakan PortfolioDataType
 
 interface PortfolioContentProps {
-  profileData: ProfileDataType;
+  portfolioData: PortfolioDataType; // Menggunakan PortfolioDataType
 }
 
 const NAV_HEIGHT_OFFSET = 70; 
 
-export default function PortfolioContent({ profileData }: PortfolioContentProps) {
+export default function PortfolioContent({ portfolioData }: PortfolioContentProps) {
   const [activeSection, setActiveSection] = useState("hero");
   const sectionRefs = useRef<{[key: string]: HTMLElement | null}>({});
 
@@ -119,47 +120,47 @@ export default function PortfolioContent({ profileData }: PortfolioContentProps)
       <Navigation 
         activeSection={activeSection} 
         navLinks={navLinks} 
-        profileName={profileData.name}
+        profileName={portfolioData.name}
       />
       <main className="flex-grow pt-16 md:pt-20">
         <HeroSection
           id="hero"
-          name={profileData.name}
-          title={profileData.title}
-          tagline={profileData.heroTagline}
-          imageUrl={profileData.heroImageUrl}
-          imageHint={profileData.heroImageHint}
-          socialLinks={profileData.socialLinks}
-          cvUrl={profileData.cvUrl}
+          name={portfolioData.name}
+          title={portfolioData.title}
+          tagline={portfolioData.heroTagline}
+          imageUrl={portfolioData.heroImageUrl}
+          imageHint={portfolioData.heroImageHint}
+          socialLinks={portfolioData.socialLinks}
+          cvUrl={portfolioData.cvUrl}
         />
         <AboutSection
           id="about"
           title="Tentang Saya"
-          imageUrl={profileData.about.imageUrl}
-          imageHint={profileData.about.imageHint}
-          paragraphs={profileData.about.paragraphs}
-          education={profileData.about.education}
+          imageUrl={portfolioData.about.imageUrl}
+          imageHint={portfolioData.about.imageHint}
+          paragraphs={portfolioData.about.paragraphs}
+          education={portfolioData.about.education}
         />
         <SkillsSection
           id="skills"
           title="Keahlian Utama"
-          skills={profileData.skills}
+          skills={portfolioData.skills}
         />
         <ProjectsSection
           id="projects"
           title="Proyek Pilihan"
-          projects={profileData.projects}
+          projects={portfolioData.projects}
         />
         <ContactSection
           id="contact"
           title="Hubungi Saya"
-          email={profileData.contactEmail}
+          email={portfolioData.contactEmail}
         />
       </main>
       <Footer 
-        copyrightName={profileData.name} 
-        year={profileData.copyrightYear}
-        socialLinks={profileData.socialLinks}
+        copyrightName={portfolioData.name} 
+        year={portfolioData.copyrightYear}
+        socialLinks={portfolioData.socialLinks}
       />
     </div>
   );
