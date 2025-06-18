@@ -22,11 +22,12 @@ interface SkillDocument {
 }
 
 // Interface untuk dokumen pengaturan profil dari database
-// Ini akan digunakan untuk mengambil profileImageUri dari koleksi 'profile_settings'
+// Ini akan digunakan untuk mengambil profileImageUri dan cvUrl dari koleksi 'profile_settings'
+// Koleksi 'profile_settings' akan berada di dalam database default (misal: portofolioDB)
 interface ProfileSettingsDocument {
-  _id?: ObjectId; // ID bisa kita buat unik atau biarkan MongoDB yang generate
-  profileImageUri?: string; // Menyimpan Data URI dari gambar profil
-  // Tambahkan field lain untuk pengaturan profil di sini jika perlu
+  _id?: ObjectId; 
+  profileImageUri?: string; 
+  cvUrl?: string; // Menyimpan path publik ke file CV
 }
 
 
@@ -53,15 +54,15 @@ export interface PortfolioDataType {
     name: string;
     title: string;
     heroTagline: string;
-    heroImageUrl: string; // URL atau Data URI gambar untuk Hero Section
+    heroImageUrl: string; 
     heroImageHint: string;
     socialLinks: {
       github: string;
       linkedin: string;
     };
-    cvUrl: string;
+    cvUrl: string; // URL ke file CV, akan diambil dari database
     about: {
-      imageUrl: string; // URL atau Data URI gambar untuk About Section
+      imageUrl: string; 
       imageHint: string;
       paragraphs: string[];
       education: { institution: string; detail: string }[];
@@ -77,19 +78,17 @@ export interface PortfolioDataType {
 async function getProjects(): Promise<ProjectData[]> {
   try {
     const client: MongoClient = await clientPromise;
-    // Menggunakan database default yang dikonfigurasi di MONGODB_URI (misal: portofolioDB)
-    const db = client.db();
-    // Koleksi 'projects' akan berada di dalam database default tersebut
-    const projectsCollection = db.collection<ProjectDocument>("projects");
+    const db = client.db(); // Menggunakan database default (misal: portofolioDB)
+    const projectsCollection = db.collection<ProjectDocument>("projects"); // Koleksi 'projects' di dalam portofolioDB
     const projects = await projectsCollection.find({}).sort({ createdAt: -1 }).toArray();
     return projects.map(p => ({
       ...p,
-      _id: p._id.toString(), // Konversi ObjectId ke string
+      _id: p._id.toString(), 
       createdAt: p.createdAt,
     }));
   } catch (e) {
     console.error("Failed to fetch projects:", e);
-    return []; // Kembalikan array kosong jika terjadi error
+    return []; 
   }
 }
 
@@ -97,78 +96,70 @@ async function getProjects(): Promise<ProjectData[]> {
 async function getSkills(): Promise<SkillData[]> {
   try {
     const client: MongoClient = await clientPromise;
-    // Menggunakan database default yang dikonfigurasi di MONGODB_URI
-    const db = client.db();
-    // Koleksi 'skills' akan berada di dalam database default tersebut
-    const skillsCollection = db.collection<SkillDocument>("skills");
+    const db = client.db(); // Menggunakan database default (misal: portofolioDB)
+    const skillsCollection = db.collection<SkillDocument>("skills"); // Koleksi 'skills' di dalam portofolioDB
     const skills = await skillsCollection.find({}).sort({ name: 1 }).toArray();
-    return skills.map(s => ({ ...s, _id: s._id.toString(), name: s.name })); // Konversi ObjectId
+    return skills.map(s => ({ ...s, _id: s._id.toString(), name: s.name })); 
   } catch (e) {
     console.error("Failed to fetch skills:", e);
-    return []; // Kembalikan array kosong jika terjadi error
+    return []; 
   }
 }
 
-// Fungsi untuk mengambil data pengaturan profil (termasuk gambar profil) dari MongoDB
+// Fungsi untuk mengambil data pengaturan profil (termasuk gambar profil dan URL CV) dari MongoDB
 async function getProfileSettingsData(): Promise<Partial<ProfileSettingsDocument>> {
   try {
     const client: MongoClient = await clientPromise;
-    // Menggunakan database default yang dikonfigurasi di MONGODB_URI
-    const db = client.db();
-    // Koleksi 'profile_settings' akan berada di dalam database default tersebut
-    const profileSettingsCollection: Collection<ProfileSettingsDocument> = db.collection("profile_settings");
-    const settings = await profileSettingsCollection.findOne({}); // Ambil satu dokumen pengaturan (jika ada)
+    const db = client.db(); // Menggunakan database default (misal: portofolioDB)
+    const profileSettingsCollection: Collection<ProfileSettingsDocument> = db.collection("profile_settings"); // Koleksi 'profile_settings' di dalam portofolioDB
+    const settings = await profileSettingsCollection.findOne({}); 
     
     if (settings) {
       return {
         profileImageUri: settings.profileImageUri,
+        cvUrl: settings.cvUrl,
       };
     }
-    return {}; // Kembalikan objek kosong jika tidak ada pengaturan
+    return {}; 
   } catch (e) {
     console.error("Failed to fetch profile settings data:", e);
-    return {}; // Kembalikan objek kosong jika terjadi error
+    return {}; 
   }
 }
 
 
 export default async function PortfolioPage() {
-  // Ambil semua data yang dibutuhkan secara paralel
   const [fetchedProjects, fetchedSkills, profileSettings] = await Promise.all([
     getProjects(),
     getSkills(),
     getProfileSettingsData()
   ]);
 
-  // Tentukan URL gambar profil, gunakan placeholder jika tidak ada di database
-  // Placeholder untuk Hero Section
   const heroPlaceholder = "https://placehold.co/240x240.png"; 
-  // Placeholder untuk About Section
   const aboutPlaceholder = "https://placehold.co/320x400.png"; 
+  const defaultCvUrl = "/download/Wahyu_Pratomo-cv.pdf"; // Default CV URL jika tidak ada di DB
 
-  // Ambil gambar profil dari database, jika tidak ada atau tidak valid, akan null
   const profileImageFromDB = (profileSettings.profileImageUri && profileSettings.profileImageUri.startsWith('data:image/'))
                          ? profileSettings.profileImageUri
                          : null;
+  
+  const cvUrlFromDB = profileSettings.cvUrl || defaultCvUrl;
 
-  // Struktur data portofolio yang akan dikirim ke komponen client
+
   const portfolioData: PortfolioDataType = {
     name: "Wahyu Pratomo", 
     title: "Spesialis Media Sosial | Digital Marketing Expert | Strategi dan Kinerja Pemasaran",
     heroTagline: "Membantu merek berkembang di dunia digital dengan strategi yang data-driven dan konten yang menarik.",
-    // Gunakan gambar profil dari database, atau placeholder jika tidak ada
-    // Pastikan file profile.png ada di public/images/ jika menggunakan path statis
     heroImageUrl: profileImageFromDB || heroPlaceholder,
-    heroImageHint: "profile portrait", // Hint untuk AI jika menggunakan placeholder atau gambar dari DB
+    heroImageHint: "profile portrait", 
     socialLinks: {
       github: "https://github.com/bayuarp26/",
       linkedin: "https://linkedin.com/in/wahyupratomo26",
     },
-    cvUrl: "/download/Wahyu_Pratomo-cv.pdf", // Path CV
+    cvUrl: cvUrlFromDB, 
     about: {
-      // Gunakan gambar profil yang sama untuk About, atau placeholder yang sesuai jika tidak ada
       imageUrl: profileImageFromDB || aboutPlaceholder, 
-      imageHint: "professional activity", // Hint untuk AI
+      imageHint: "professional activity", 
       paragraphs: [
       "Saya adalah seorang Spesialis Media Sosial dengan fokus pada Pemasaran Digital dan Kinerja Pemasaran.",
       "Memiliki pengalaman selama 9 bulan di industri ini, Saya suka bekerja dengan merek yang memiliki misi dan berkomitmen untuk merepresentasikan produk secara menarik di media sosial."
@@ -181,10 +172,8 @@ export default async function PortfolioPage() {
     skills: fetchedSkills,
     projects: fetchedProjects,
     contactEmail: "wahyupratomo187@gmail.com",
-    copyrightYear: new Date().getFullYear() // Tahun hak cipta dinamis
+    copyrightYear: new Date().getFullYear() 
   };
 
   return <PortfolioContent portfolioData={portfolioData} />;
 }
-
-    
