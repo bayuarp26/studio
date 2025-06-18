@@ -43,7 +43,10 @@ export default function ContactSection({ id, title, email, socialLinks }: Contac
                 rel="noopener noreferrer"
                 className="w-full block"
               >
-                <Button size="lg" variant="outline" className="w-full text-base md:text-lg border-primary text-primary hover:bg-primary hover:text-primary-foreground">
+                <Button 
+                  size="lg" 
+                  className="w-full text-base md:text-lg bg-blue-600 text-white hover:bg-blue-700"
+                >
                   <Linkedin className="mr-2 h-5 w-5" />
                   Terhubung di LinkedIn
                 </Button>
@@ -58,3 +61,4 @@ export default function ContactSection({ id, title, email, socialLinks }: Contac
     </SectionContainer>
   );
 }
+
