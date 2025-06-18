@@ -23,7 +23,7 @@ export default function ProjectsSection({ id, title, projects }: ProjectsSection
       <h2 id={`${id}-heading`} className="section-title text-center md:text-left">{title}</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-10">
         {projects.map((project, index) => (
-          <div key={index} className="[perspective:1000px]">
+          <div key={index}> {/* Removed perspective wrapper */}
             <ProjectCard
               title={project.title}
               imageUrl={project.imageUrl}
