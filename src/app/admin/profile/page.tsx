@@ -1,65 +1,59 @@
 
-"use client"; // Added "use client" for useRouter and logoutAction client-side call
+"use client"; 
 
 import Link from 'next/link';
-// Removed direct clientPromise import as data fetching is not direct here anymore
-// import clientPromise from '@/lib/mongodb';
-// import type { MongoClient, ObjectId, Document } from 'mongodb';
 import { Button } from '@/components/ui/button';
 import SectionContainer from '@/components/section-container';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import Image from 'next/image';
-import { Home, ImageUp, ListChecks, FileText, UserCog, LogOut, KeyRound } from 'lucide-react'; 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Home, ImageUp, ListChecks, FileText, UserCog, LogOut, KeyRound, PlusCircle } from 'lucide-react'; 
 import UpdateProfileImageForm from './_components/update-profile-image-form';
 import ManageSkillsSection from './_components/manage-skills-section';
 import UpdateCVForm from './_components/update-cv-form'; 
-import UpdateAdminCredentialsForm from './_components/update-admin-credentials-form'; // New import
-import type { SkillData, ProfileDataType } from '@/app/page'; 
-import { logoutAction } from "./actions"; // Import logoutAction
-import { useRouter } from "next/navigation"; // Import useRouter
-import { useToast } from "@/hooks/use-toast"; // Import useToast
-import { useEffect, useState } from 'react'; // Import useEffect and useState for client-side data
+import UpdateAdminCredentialsForm from './_components/update-admin-credentials-form';
+import type { SkillData } from '@/app/page'; 
+import { logoutAction, getAdminProfileInitialData } from "./actions"; 
+import { useRouter } from "next/navigation"; 
+import { useToast } from "@/hooks/use-toast"; 
+import { useEffect, useState } from 'react';
 
-// Data fetching should ideally be done via props or a client-side fetch if page is client component
-// For this example, we'll assume skills and profileData are passed as props or fetched client-side
-
-interface AdminProfilePageProps {
-  // These would typically be passed as props after server-side fetching in a real scenario
-  // For now, we'll fetch them client-side or use placeholders
+interface AdminProfilePageData {
+  skills: SkillData[];
+  currentHeroImageUrl: string;
+  currentCvUrl: string;
 }
 
-// Dummy function to simulate fetching skills - replace with actual data fetching
-async function getSkillsClientSide(): Promise<SkillData[]> {
-  // In a real app, this would be an API call or passed via props from a server component
-  // For now, returning a default or assuming it's passed, or even fetching from an API endpoint
-  // This function is illustrative if we were to fetch client-side
-  // For now, we'll manage skills state locally within ManageSkillsSection.
-  return []; 
-}
-
-async function getCurrentHeroImageUrlClientSide(): Promise<string> {
-    return "/profile.png"; 
-}
-
-
-export default function AdminProfilePage({}: AdminProfilePageProps) {
+export default function AdminProfilePage() {
   const router = useRouter();
   const { toast } = useToast();
-  const [skills, setSkills] = useState<SkillData[]>([]);
-  const [initialHeroImageUrl, setInitialHeroImageUrl] = useState("/profile.png");
-  const currentCvUrl = "/download/Wahyu_Pratomo-cv.pdf"; // This can remain static if updated by server action
+  const [data, setData] = useState<AdminProfilePageData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-
-  // Example: Fetch skills client-side (or manage state passed from server component)
   useEffect(() => {
-    // This is where you might fetch initial skills if not passed as props
-    // For simplicity, ManageSkillsSection now handles its own state based on initial props
-    // If you need to re-fetch skills globally for this page, do it here.
-    // getSkillsClientSide().then(setSkills); 
-    // getCurrentHeroImageUrlClientSide().then(setInitialHeroImageUrl);
-    // For now, initialSkills for ManageSkillsSection will be handled by its props
-    // And initialHeroImageUrl is set statically or could be fetched
-  }, []);
+    async function fetchData() {
+      setIsLoading(true);
+      try {
+        const result = await getAdminProfileInitialData();
+        if (result.success && result.data) {
+          setData(result.data);
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Gagal Memuat Data",
+            description: result.error || "Tidak dapat memuat data awal profil.",
+          });
+        }
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "Error Sistem",
+          description: "Gagal menghubungi server untuk data profil.",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchData();
+  }, [toast]);
 
 
   const handleLogout = async () => {
@@ -70,6 +64,7 @@ export default function AdminProfilePage({}: AdminProfilePageProps) {
         description: "Anda telah berhasil logout.",
       });
       router.push("/login");
+      router.refresh(); // Penting untuk membersihkan state di sisi server juga
     } else {
        toast({
         variant: "destructive",
@@ -79,21 +74,39 @@ export default function AdminProfilePage({}: AdminProfilePageProps) {
     }
   };
 
+  if (isLoading) {
+    return (
+      <SectionContainer id="admin-profile-loading" className="bg-background min-h-screen pt-24 md:pt-32 flex justify-center items-center">
+        <p className="text-xl text-muted-foreground">Memuat data profil admin...</p>
+      </SectionContainer>
+    );
+  }
+
+  if (!data) {
+     return (
+      <SectionContainer id="admin-profile-error" className="bg-background min-h-screen pt-24 md:pt-32 flex flex-col justify-center items-center">
+        <p className="text-xl text-destructive mb-4">Gagal memuat data profil.</p>
+        <Button onClick={() => window.location.reload()}>Coba Lagi</Button>
+      </SectionContainer>
+    );
+  }
+
+
   return (
     <SectionContainer id="admin-profile" className="bg-background min-h-screen pt-24 md:pt-32">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10">
         <h1 className="section-title mb-4 sm:mb-0">Pengaturan Admin</h1>
         <div className="flex flex-wrap gap-2">
           <Button asChild variant="outline">
+            <Link href="/admin/add-project">
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Tambah Proyek
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
             <Link href="/admin/projects">
               <ListChecks className="mr-2 h-4 w-4" />
               Kelola Proyek
-            </Link>
-          </Button>
-           <Button asChild variant="outline">
-            <Link href="/admin/add-project">
-              <ListChecks className="mr-2 h-4 w-4" />
-              Tambah Proyek
             </Link>
           </Button>
           <Button asChild variant="outline">
@@ -119,7 +132,7 @@ export default function AdminProfilePage({}: AdminProfilePageProps) {
             <CardDescription>Unggah foto profil baru. Foto di halaman utama dan "Tentang Saya" akan diganti.</CardDescription>
           </CardHeader>
           <CardContent>
-            <UpdateProfileImageForm currentImageUrl={initialHeroImageUrl} />
+            <UpdateProfileImageForm currentImageUrl={data.currentHeroImageUrl} />
           </CardContent>
         </Card>
 
@@ -132,11 +145,7 @@ export default function AdminProfilePage({}: AdminProfilePageProps) {
             <CardDescription>Tambah atau hapus keahlian yang ditampilkan di halaman utama.</CardDescription>
           </CardHeader>
           <CardContent>
-            {/* Pass an empty array or fetched skills if available. 
-                ManageSkillsSection handles fetching its initial state if this page becomes a server component
-                or if initialSkills are passed as props.
-            */}
-            <ManageSkillsSection initialSkills={skills} />
+            <ManageSkillsSection initialSkills={data.skills} />
           </CardContent>
         </Card>
         
@@ -149,7 +158,7 @@ export default function AdminProfilePage({}: AdminProfilePageProps) {
             <CardDescription>Unggah file CV baru dalam format PDF. File saat ini akan diganti.</CardDescription>
           </CardHeader>
           <CardContent>
-            <UpdateCVForm currentCvUrl={currentCvUrl} />
+            <UpdateCVForm currentCvUrl={data.currentCvUrl} />
           </CardContent>
         </Card>
 

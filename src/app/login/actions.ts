@@ -3,9 +3,9 @@
 
 import { z } from "zod";
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+// import { redirect } from "next/navigation"; // Tidak digunakan redirect langsung dari server action ini
 import clientPromise from "@/lib/mongodb";
-import type { MongoClient, Collection, Document } from 'mongodb';
+import type { MongoClient, Collection, Document, ObjectId } from 'mongodb';
 import { hashPassword, comparePassword, createSessionToken } from "@/lib/authUtils";
 
 const ADMIN_AUTH_COOKIE_NAME = 'admin-auth-token';
@@ -16,9 +16,10 @@ const loginInputSchema = z.object({
 });
 
 interface AdminUserDocument extends Document {
+  _id: ObjectId;
   username: string;
-  hashedPassword?: string; // Make optional initially for transition
-  password?: string; // For initial unhashed password, to be removed after hashing
+  hashedPassword?: string; // Bisa jadi belum ada jika ini setup awal dari password lama
+  password?: string; // Untuk password lama yang belum di-hash (legacy, akan dihapus)
 }
 
 const initialAdminUsername = "085156453246";
@@ -43,44 +44,55 @@ export async function loginAction(
     let adminUser = await adminUsersCollection.findOne({ username });
 
     if (!adminUser) {
-      // Check if this is the first-time setup with hardcoded initial credentials
+      // Cek apakah ini setup pertama kali dengan kredensial awal yang di-hardcode
       if (username === initialAdminUsername && password === initialAdminPassword) {
-        const hashedPassword = await hashPassword(initialAdminPassword);
-        const result = await adminUsersCollection.insertOne({
-          username: initialAdminUsername,
-          hashedPassword: hashedPassword,
-        });
-        adminUser = await adminUsersCollection.findOne({ _id: result.insertedId });
-        if (!adminUser) {
-             return { success: false, error: "Gagal membuat pengguna admin awal." };
+        const count = await adminUsersCollection.countDocuments();
+        if (count === 0) { // Hanya buat jika belum ada admin sama sekali
+            const hashedPassword = await hashPassword(initialAdminPassword);
+            const result = await adminUsersCollection.insertOne({
+              username: initialAdminUsername,
+              hashedPassword: hashedPassword,
+            } as AdminUserDocument); // Type assertion untuk memastikan struktur
+            
+            // Ambil kembali user yang baru dibuat
+             const insertedId = result.insertedId;
+             if (!insertedId) {
+                 return { success: false, error: "Gagal membuat pengguna admin awal setelah insert." };
+             }
+             adminUser = await adminUsersCollection.findOne({ _id: insertedId });
+
+            if (!adminUser) {
+                 return { success: false, error: "Gagal membuat pengguna admin awal." };
+            }
+        } else {
+             return { success: false, error: "Username atau password salah." };
         }
       } else {
         return { success: false, error: "Username atau password salah." };
       }
     }
 
-    // Ensure password field exists and is hashed
-    if (adminUser.password && !adminUser.hashedPassword) {
-      // This is for migrating an unhashed password (if it somehow existed)
-      // In a real scenario, this unhashed 'password' field should not exist long-term.
-      const isMatch = (password === adminUser.password); 
-      if(isMatch) {
+    // Penanganan password lama yang belum di-hash (jika ada)
+    // Ini untuk migrasi dari sistem lama jika password disimpan sebagai plain text
+    // dan belum ada hashedPassword.
+    if (adminUser && adminUser.password && !adminUser.hashedPassword) {
+      const isLegacyPasswordMatch = (password === adminUser.password); 
+      if(isLegacyPasswordMatch) {
         const newHashedPassword = await hashPassword(adminUser.password);
         await adminUsersCollection.updateOne(
           { _id: adminUser._id },
           { $set: { hashedPassword: newHashedPassword }, $unset: { password: "" } }
         );
-        adminUser.hashedPassword = newHashedPassword; // Update in-memory object
+        adminUser.hashedPassword = newHashedPassword; // Update objek di memori
       } else {
         return { success: false, error: "Username atau password salah." };
       }
     }
     
-    if (!adminUser.hashedPassword) {
-        // This case should ideally not be reached if the above logic is sound
-        return { success: false, error: "Konfigurasi akun admin tidak lengkap." };
+    if (!adminUser || !adminUser.hashedPassword) {
+        // Kasus ini idealnya tidak tercapai jika logika di atas benar
+        return { success: false, error: "Konfigurasi akun admin tidak lengkap atau username salah." };
     }
-
 
     const isPasswordValid = await comparePassword(password, adminUser.hashedPassword);
 
@@ -88,14 +100,15 @@ export async function loginAction(
       return { success: false, error: "Username atau password salah." };
     }
 
-    // Create session token
+    // Buat token sesi
     const token = await createSessionToken({ username: adminUser.username, sub: adminUser._id.toString() });
 
     cookies().set(ADMIN_AUTH_COOKIE_NAME, token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      maxAge: 60 * 60 * 2, // 2 hours
-      path: '/',
+      maxAge: 60 * 60 * 2, // 2 jam
+      path: '/', // Cookie berlaku untuk semua path
+      sameSite: 'lax',
     });
 
     return { success: true };
@@ -104,5 +117,4 @@ export async function loginAction(
     console.error("Error in loginAction:", error);
     return { success: false, error: "Terjadi kesalahan pada server saat login." };
   }
-  // No explicit redirect here, client-side will handle it based on success status.
 }

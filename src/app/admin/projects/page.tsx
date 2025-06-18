@@ -12,8 +12,8 @@ import { PlusCircle, UserCog, Home, LogOut } from 'lucide-react';
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { logoutAction } from "../profile/actions"; 
-import { getAdminProjectsAction } from "./actions"; // Import the new action
-import type { ProjectDataForAdmin as ProjectData } from "./actions"; // Use the interface from actions
+import { getAdminProjectsAction } from "./actions";
+import type { ProjectDataForAdmin as ProjectData } from "./actions";
 import { useEffect, useState } from 'react';
 
 export default function ManageProjectsPage() {
@@ -60,6 +60,7 @@ export default function ManageProjectsPage() {
         description: "Anda telah berhasil logout.",
       });
       router.push("/login");
+      router.refresh();
     } else {
        toast({
         variant: "destructive",
@@ -143,6 +144,7 @@ export default function ManageProjectsPage() {
                 )}
               </CardContent>
               <CardFooter className="p-3 border-t bg-muted/30 flex justify-end space-x-2">
+                {/* Tombol Edit bisa ditambahkan di sini jika diperlukan */}
                 <DeleteProjectButton projectId={project._id} projectTitle={project.title} />
               </CardFooter>
             </Card>

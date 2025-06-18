@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -20,9 +21,22 @@ import { useRouter } from "next/navigation";
 
 const adminCredentialsFormSchema = z.object({
   currentPassword: z.string().min(1, "Password saat ini tidak boleh kosong."),
-  newUsername: z.string().min(1, "Username baru tidak boleh kosong."),
-  newPassword: z.string().min(6, "Password baru minimal 6 karakter."),
+  newUsername: z.string().min(3, "Username baru minimal 3 karakter.").optional().or(z.literal('')),
+  newPassword: z.string().min(6, "Password baru minimal 6 karakter.").optional().or(z.literal('')),
+  confirmNewPassword: z.string().optional().or(z.literal('')),
+}).refine(data => data.newUsername || data.newPassword, {
+    message: "Setidaknya username baru atau password baru harus diisi.",
+    path: ["newUsername"], 
+}).refine(data => {
+    if (data.newPassword && data.newPassword !== data.confirmNewPassword) {
+        return false;
+    }
+    return true;
+}, {
+    message: "Konfirmasi password baru tidak cocok.",
+    path: ["confirmNewPassword"],
 });
+
 
 type AdminCredentialsFormValues = z.infer<typeof adminCredentialsFormSchema>;
 
@@ -36,21 +50,42 @@ export default function UpdateAdminCredentialsForm() {
       currentPassword: "",
       newUsername: "",
       newPassword: "",
+      confirmNewPassword: "",
     },
     mode: "onChange",
   });
 
   async function onSubmit(data: AdminCredentialsFormValues) {
+    if (!data.newUsername && !data.newPassword) {
+        form.setError("newUsername", { type: "manual", message: "Isi username baru atau password baru."})
+        return;
+    }
+    if (data.newPassword && data.newPassword !== data.confirmNewPassword) {
+        form.setError("confirmNewPassword", { type: "manual", message: "Konfirmasi password baru tidak cocok."})
+        return;
+    }
+
     try {
-      const result = await updateAdminCredentialsAction(data);
+      const result = await updateAdminCredentialsAction({
+        currentPassword: data.currentPassword,
+        newUsername: data.newUsername || undefined, // Kirim undefined jika kosong
+        newPassword: data.newPassword || undefined, // Kirim undefined jika kosong
+      });
+
       if (result.success) {
         toast({
           title: "Kredensial Diperbarui",
-          description: "Kredensial admin berhasil diperbarui. Silakan login kembali.",
+          description: "Kredensial admin berhasil diperbarui. Anda akan logout, silakan login kembali.",
         });
         form.reset();
-        // Redirect to login after successful update
-        router.push("/login");
+        // router.push("/login") tidak diperlukan karena logoutAction akan dipanggil dari server
+        // dan middleware akan handle redirect
+        router.refresh(); // Refresh untuk memastikan middleware/sesi diperbarui
+        // Tunggu sebentar agar toast terlihat sebelum redirect oleh middleware jika sesi dihapus
+        setTimeout(() => {
+          router.push("/login"); 
+        }, 1500);
+
       } else {
         toast({
           variant: "destructive",
@@ -75,15 +110,15 @@ export default function UpdateAdminCredentialsForm() {
           name="newUsername"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Username Baru</FormLabel>
+              <FormLabel>Username Baru (Opsional)</FormLabel>
               <FormControl>
-                <Input placeholder="Username admin baru" {...field} />
+                <Input placeholder="Biarkan kosong jika tidak ingin diubah" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        <FormField
+         <FormField
           control={form.control}
           name="currentPassword"
           render={({ field }) => (
@@ -101,10 +136,26 @@ export default function UpdateAdminCredentialsForm() {
           name="newPassword"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Password Baru</FormLabel>
+              <FormLabel>Password Baru (Opsional)</FormLabel>
               <FormControl>
-                <Input type="password" placeholder="Minimal 6 karakter" {...field} />
+                <Input type="password" placeholder="Minimal 6 karakter, biarkan kosong jika tidak diubah" {...field} />
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="confirmNewPassword"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Konfirmasi Password Baru</FormLabel>
+              <FormControl>
+                <Input type="password" placeholder="Ulangi password baru" {...field} disabled={!form.watch("newPassword")} />
+              </FormControl>
+              <FormDescription>
+                Harus diisi jika Anda mengganti password.
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}

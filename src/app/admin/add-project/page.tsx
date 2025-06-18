@@ -2,7 +2,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,7 +24,7 @@ import { ListOrdered, UploadCloud, XCircle, UserCog, Home, PlusCircle, LogOut } 
 import Image from "next/image";
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
-import { logoutAction } from "../profile/actions"; // Assuming logoutAction is in profile/actions
+import { logoutAction } from "../profile/actions"; 
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
@@ -159,6 +159,7 @@ export default function AddProjectPage() {
         description: "Anda telah berhasil logout.",
       });
       router.push("/login");
+      router.refresh(); 
     } else {
        toast({
         variant: "destructive",

@@ -6,13 +6,7 @@ if (!process.env.MONGODB_URI) {
 
 const uri = process.env.MONGODB_URI;
 
-// Add a check for the placeholder
-if (uri.includes('NAMA_DATABASE_ANDA')) {
-  throw new Error(
-    'MongoDB URI in .env.local still contains the placeholder "NAMA_DATABASE_ANDA". ' +
-    'Please replace it with your actual database name and restart the server.'
-  );
-}
+// Placeholder check removed from here
 
 const options = {
   serverApi: {

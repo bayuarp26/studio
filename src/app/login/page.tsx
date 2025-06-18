@@ -18,7 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { loginAction } from "./actions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LogIn } from "lucide-react";
-import { useRouter } from "next/navigation"; // Import useRouter
+import { useRouter } from "next/navigation";
 
 const loginFormSchema = z.object({
   username: z.string().min(1, { message: "Username tidak boleh kosong." }),
@@ -29,7 +29,7 @@ type LoginFormValues = z.infer<typeof loginFormSchema>;
 
 export default function LoginPage() {
   const { toast } = useToast();
-  const router = useRouter(); // Initialize useRouter
+  const router = useRouter();
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginFormSchema),
@@ -48,7 +48,8 @@ export default function LoginPage() {
           title: "Login Berhasil",
           description: "Anda akan diarahkan ke halaman admin.",
         });
-        router.push("/admin/profile"); // Redirect on successful login
+        router.push("/admin/profile"); // Redirect ke halaman admin profil setelah login berhasil
+        router.refresh(); // Untuk memastikan state middleware diperbarui
       } else {
         toast({
           variant: "destructive",
