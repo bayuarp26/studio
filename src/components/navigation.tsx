@@ -22,31 +22,27 @@ interface NavigationProps {
 export default function Navigation({ activeSection, navLinks, profileName }: NavigationProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isHeroNameVisible, setIsHeroNameVisible] = useState(true);
-  const navElementRef = useRef<HTMLElement>(null); // Ref for the nav element
-  const [currentNavHeight, setCurrentNavHeight] = useState(0); // Store dynamic nav height
+  const navElementRef = useRef<HTMLElement>(null);
+  const [currentNavHeight, setCurrentNavHeight] = useState(0);
 
   const initials = profileName.split(' ').map(n => n[0]).join('').toUpperCase();
 
-  // Get actual navbar height after mount
   useEffect(() => {
     if (navElementRef.current) {
       setCurrentNavHeight(navElementRef.current.offsetHeight);
     }
   }, []);
 
-  // IntersectionObserver logic
   useEffect(() => {
-    // Only run if currentNavHeight has been set
-    if (currentNavHeight === 0) return;
+    if (currentNavHeight === 0) return; // Jangan setup observer jika tinggi nav belum diketahui
 
     const heroNameElement = document.getElementById('hero-main-name');
     if (!heroNameElement) {
-      console.warn("Hero name element 'hero-main-name' not found for IntersectionObserver.");
+      console.warn("Elemen 'hero-main-name' tidak ditemukan untuk IntersectionObserver.");
       return;
     }
 
-    // Correct offset for rootMargin: trigger when hero name is 1px from being fully covered
-    const observerOffset = currentNavHeight - 1;
+    const observerOffset = currentNavHeight -1; // Trigger saat 1px nama mulai tertutup nav
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -54,7 +50,7 @@ export default function Navigation({ activeSection, navLinks, profileName }: Nav
       },
       {
         rootMargin: `-${observerOffset}px 0px 0px 0px`,
-        threshold: 0, // Trigger as soon as the element is even 1px past the margin
+        threshold: 0, // Trigger segera setelah elemen melewati batas
       }
     );
 
@@ -65,14 +61,13 @@ export default function Navigation({ activeSection, navLinks, profileName }: Nav
         observer.unobserve(heroNameElement);
       }
     };
-  }, [currentNavHeight, profileName]); // Rerun observer logic if nav height changes
+  }, [currentNavHeight]); // Hanya bergantung pada currentNavHeight
 
   const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
     e.preventDefault();
     const element = document.getElementById(sectionId);
     if (element) {
-      // Use dynamic nav height for scroll offset, fallback if not ready
-      const yOffset = -(currentNavHeight > 0 ? currentNavHeight : 80) + 1; 
+      const yOffset = -(currentNavHeight > 0 ? currentNavHeight : 80) + 1;
       const y = element.getBoundingClientRect().top + window.scrollY + yOffset;
       window.scrollTo({ top: y, behavior: 'smooth' });
     }
@@ -80,8 +75,8 @@ export default function Navigation({ activeSection, navLinks, profileName }: Nav
   };
 
   return (
-    <nav 
-      ref={navElementRef} // Assign ref here
+    <nav
+      ref={navElementRef}
       className="fixed top-0 left-0 right-0 bg-background/80 backdrop-blur-md shadow-md z-50 h-16 md:h-20 flex items-center border-b border-border"
     >
       <div className="container mx-auto flex justify-between items-center px-4 sm:px-6 lg:px-8">
@@ -91,28 +86,27 @@ export default function Navigation({ activeSection, navLinks, profileName }: Nav
           className="text-xl font-bold text-primary hover:text-primary/80 transition-colors flex items-center"
           aria-label="Kembali ke atas"
         >
-          {/* Container for animated text. w-auto allows it to size to content */}
           <div className="relative h-7 w-auto flex items-center overflow-hidden">
-            {/* Span for Initials "WP" - Shown when hero name IS visible */}
+            {/* Inisial "WP" - Ditampilkan saat nama di hero section TERLIHAT */}
             <span
               aria-hidden={!isHeroNameVisible}
               className={cn(
                 "absolute inset-x-0 flex items-center justify-start transition-all duration-300 ease-in-out whitespace-nowrap",
                 isHeroNameVisible
-                  ? "opacity-100 translate-y-0" // Visible, in place
-                  : "opacity-0 -translate-y-full" // Hidden, slides UP and out
+                  ? "opacity-100 translate-y-0" // Terlihat, di tempat
+                  : "opacity-0 -translate-y-full" // Tersembunyi, slide ke atas keluar
               )}
             >
               {initials}
             </span>
-            {/* Span for Full Name "Wahyu Pratomo" - Shown when hero name IS NOT visible */}
+            {/* Nama Lengkap "Wahyu Pratomo" - Ditampilkan saat nama di hero section TIDAK TERLIHAT (tertutup) */}
             <span
               aria-hidden={isHeroNameVisible}
               className={cn(
                 "absolute inset-x-0 flex items-center justify-start transition-all duration-300 ease-in-out whitespace-nowrap",
                 !isHeroNameVisible
-                  ? "opacity-100 translate-y-0" // Visible, in place
-                  : "opacity-0 translate-y-full" // Hidden, slides IN from bottom
+                  ? "opacity-100 translate-y-0" // Terlihat, di tempat
+                  : "opacity-0 translate-y-full" // Tersembunyi, slide dari bawah masuk
               )}
             >
               {profileName}
