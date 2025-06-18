@@ -13,15 +13,19 @@ import { hashPassword, comparePassword } from "@/lib/authUtils";
 
 const ADMIN_AUTH_COOKIE_NAME = 'admin-auth-token';
 
+// Skema untuk validasi Data URI gambar
 const heroImageDataUriSchema = z.string().refine(val => val.startsWith('data:image/'), {
-  message: "URL Gambar harus berupa Data URI yang valid.",
+  message: "URL Gambar harus berupa Data URI yang valid (diawali dengan 'data:image/').",
 });
 
+// Skema untuk validasi nama keahlian
 const skillNameSchema = z.string().min(2, { message: "Nama keahlian minimal 2 karakter." });
 
+// Konstanta untuk validasi file CV
 const MAX_CV_SIZE = 2 * 1024 * 1024; // 2MB
 const ACCEPTED_CV_TYPES = ["application/pdf"];
 
+// Skema untuk validasi file CV
 const cvFileSchema = z.instanceof(File)
   .refine((file) => file.size <= MAX_CV_SIZE, `Ukuran file CV maksimal ${MAX_CV_SIZE / (1024*1024)}MB.`)
   .refine(
@@ -29,25 +33,29 @@ const cvFileSchema = z.instanceof(File)
     "Format file CV tidak valid. Harap unggah file PDF."
   );
 
+// Skema untuk validasi kredensial admin
 const adminCredentialsSchema = z.object({
   currentPassword: z.string().min(1, "Password saat ini tidak boleh kosong."),
   newUsername: z.string().min(3, "Username baru minimal 3 karakter.").optional().or(z.literal('')),
   newPassword: z.string().min(6, "Password baru minimal 6 karakter.").optional().or(z.literal('')),
 }).refine(data => data.newUsername || data.newPassword, {
     message: "Setidaknya username baru atau password baru harus diisi.",
-    path: ["newUsername"]
+    path: ["newUsername"] // Path untuk error jika validasi refine gagal
 });
 
+// Interface untuk dokumen pengguna admin di database
+// Field profileImageUri untuk foto profil publik telah dipindahkan ke koleksi 'profile_settings'
 interface AdminUserDocument extends Document {
   _id: ObjectId;
   username: string;
   hashedPassword?: string;
-  // profileImageUri untuk foto profil publik telah dipindahkan ke koleksi 'profile_settings'
 }
 
+// Interface untuk dokumen pengaturan profil di database
+// Dokumen ini akan disimpan dalam koleksi 'profile_settings'
 interface ProfileSettingsDocument extends Document {
-  _id?: ObjectId; // Bisa jadi kita hanya punya 1 dokumen, jadi _id bisa fixed atau tidak dipakai
-  profileImageUri?: string;
+  _id?: ObjectId; // ID bisa kita buat unik atau biarkan MongoDB yang generate
+  profileImageUri?: string; // Menyimpan Data URI dari gambar profil
   // Tambahkan field lain untuk pengaturan profil di sini jika perlu
 }
 
@@ -56,27 +64,30 @@ export async function updateProfileImageAction(
   imageDataUri: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    // Verifikasi sesi admin
     const tokenCookie = cookies().get(ADMIN_AUTH_COOKIE_NAME);
     if (!tokenCookie) return { success: false, error: "Tidak terautentikasi." };
 
+    // Validasi input imageDataUri
     const validationResult = heroImageDataUriSchema.safeParse(imageDataUri);
     if (!validationResult.success) {
       const firstError = Object.values(validationResult.error.flatten().fieldErrors)[0]?.[0];
       return { success: false, error: firstError || "Data URI gambar tidak valid." };
     }
-
     const validatedDataUri = validationResult.data;
     
     const client: MongoClient = await clientPromise;
+    // Menggunakan database default yang dikonfigurasi di MONGODB_URI (misal: portofolioDB)
     const db = client.db();
+    // Koleksi 'profile_settings' akan berada di dalam database default tersebut
     const profileSettingsCollection: Collection<ProfileSettingsDocument> = db.collection("profile_settings");
 
     // Update atau buat (upsert) satu dokumen untuk menyimpan foto profil
-    // Kita bisa menggunakan ID tetap atau filter kosong jika hanya ada satu dokumen
+    // Kita bisa menggunakan filter kosong jika hanya ada satu dokumen pengaturan global
     await profileSettingsCollection.updateOne(
-      {}, // Filter kosong untuk mencocokkan dokumen tunggal, atau gunakan ID spesifik
+      {}, // Filter kosong akan mencocokkan/membuat satu dokumen global
       { $set: { profileImageUri: validatedDataUri } },
-      { upsert: true } // Buat dokumen jika belum ada
+      { upsert: true } // Membuat dokumen jika belum ada
     );
     
     revalidatePath('/'); 
@@ -97,6 +108,10 @@ export async function addSkillAction(
   name: string
 ): Promise<{ success: boolean; error?: string; newSkill?: SkillData }> {
   try {
+    // Verifikasi sesi admin
+    const tokenCookie = cookies().get(ADMIN_AUTH_COOKIE_NAME);
+    if (!tokenCookie) return { success: false, error: "Tidak terautentikasi." };
+
     const validationResult = skillNameSchema.safeParse(name);
     if (!validationResult.success) {
       return { success: false, error: validationResult.error.flatten().formErrors[0] || "Nama keahlian tidak valid." };
@@ -105,7 +120,9 @@ export async function addSkillAction(
     const validatedName = validationResult.data;
 
     const client: MongoClient = await clientPromise;
+    // Menggunakan database default yang dikonfigurasi di MONGODB_URI
     const db = client.db();
+    // Koleksi 'skills' akan berada di dalam database default tersebut
     const skillsCollection: Collection<Document> = db.collection("skills");
 
     const existingSkill = await skillsCollection.findOne({ name: { $regex: `^${validatedName}$`, $options: 'i' } });
@@ -137,16 +154,22 @@ export async function addSkillAction(
 export async function deleteSkillAction(
   skillId: string
 ): Promise<{ success: boolean; error?: string }> {
+  // Verifikasi sesi admin
+  const tokenCookie = cookies().get(ADMIN_AUTH_COOKIE_NAME);
+  if (!tokenCookie) return { success: false, error: "Tidak terautentikasi." };
+
   if (!skillId || typeof skillId !== 'string') {
     return { success: false, error: "ID keahlian tidak valid." };
   }
 
   try {
     const client: MongoClient = await clientPromise;
+    // Menggunakan database default yang dikonfigurasi di MONGODB_URI
     const db = client.db();
+    // Koleksi 'skills' akan berada di dalam database default tersebut
     const skillsCollection: Collection<Document> = db.collection("skills");
     
-    const { ObjectId } = require('mongodb');
+    const { ObjectId } = require('mongodb'); // Pastikan ObjectId diimpor atau di-require
     if (!ObjectId.isValid(skillId)) {
         return { success: false, error: "Format ID keahlian tidak valid." };
     }
@@ -169,6 +192,10 @@ export async function updateCVAction(
   formData: FormData
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    // Verifikasi sesi admin
+    const tokenCookie = cookies().get(ADMIN_AUTH_COOKIE_NAME);
+    if (!tokenCookie) return { success: false, error: "Tidak terautentikasi." };
+
     const cvFile = formData.get("cvFile") as File | null;
 
     if (!cvFile) {
@@ -182,23 +209,24 @@ export async function updateCVAction(
     }
 
     const validatedFile = validationResult.data;
-    const newFilename = "Wahyu_Pratomo-cv.pdf"; 
+    const newFilename = "Wahyu_Pratomo-cv.pdf"; // Nama file CV yang konsisten
     const publicDir = path.join(process.cwd(), 'public');
     const downloadDir = path.join(publicDir, 'download');
     const cvFilePath = path.join(downloadDir, newFilename);
 
+    // Pastikan direktori /public/download ada
     await fs.mkdir(downloadDir, { recursive: true });
 
+    // Baca file dan tulis ke sistem file
     const bytes = await validatedFile.arrayBuffer();
     const buffer = Buffer.from(bytes);
     await fs.writeFile(cvFilePath, buffer);
 
-    revalidatePath('/'); 
-    revalidatePath('/admin/profile'); 
+    revalidatePath('/'); // Revalidasi halaman utama untuk memperbarui link CV jika perlu
+    revalidatePath('/admin/profile'); // Revalidasi halaman profil admin
     return { success: true };
 
-  } catch (error)
-{
+  } catch (error) {
     console.error("Error in updateCVAction:", error);
     return { success: false, error: "Terjadi kesalahan pada server saat memperbarui CV." };
   }
@@ -207,6 +235,7 @@ export async function updateCVAction(
 export async function updateAdminCredentialsAction(
   data: z.infer<typeof adminCredentialsSchema>
 ): Promise<{ success: boolean; error?: string }> {
+   // Verifikasi sesi admin
    const tokenCookie = cookies().get(ADMIN_AUTH_COOKIE_NAME);
    if (!tokenCookie) {
      return { success: false, error: "Sesi tidak ditemukan. Silakan login kembali." };
@@ -222,12 +251,16 @@ export async function updateAdminCredentialsAction(
     const { currentPassword, newUsername, newPassword } = validationResult.data;
 
     const client: MongoClient = await clientPromise;
+    // Menggunakan database default yang dikonfigurasi di MONGODB_URI
     const db = client.db();
+    // Koleksi 'admin_users' akan berada di dalam database default tersebut
     const adminUsersCollection: Collection<AdminUserDocument> = db.collection("admin_users");
     
+    // Asumsi hanya ada satu pengguna admin, cari tanpa filter spesifik atau dengan filter yang sesuai
     const adminUser = await adminUsersCollection.findOne({}); 
 
     if (!adminUser || !adminUser.hashedPassword) {
+      // Jika tidak ada admin user, atau password belum di-hash (migrasi dari sistem lama)
       return { success: false, error: "Pengguna admin tidak ditemukan atau konfigurasi salah." };
     }
 
@@ -245,18 +278,20 @@ export async function updateAdminCredentialsAction(
     }
 
     if (Object.keys(updateData).length === 0) {
+        // Ini seharusnya sudah ditangani oleh refine di skema Zod, tapi sebagai pengaman tambahan
         return { success: false, error: "Tidak ada perubahan yang diberikan untuk username atau password."};
     }
 
     await adminUsersCollection.updateOne(
-      { _id: adminUser._id },
+      { _id: adminUser._id }, // Targetkan dokumen admin yang benar
       { $set: updateData }
     );
 
+    // Hapus cookie sesi setelah kredensial diubah untuk memaksa login ulang
     cookies().delete(ADMIN_AUTH_COOKIE_NAME);
     
     revalidatePath("/admin/profile");
-    revalidatePath("/login"); 
+    revalidatePath("/login"); // Untuk memastikan halaman login direfresh jika ada perubahan sesi
     return { success: true };
 
   } catch (error) {
@@ -268,37 +303,44 @@ export async function updateAdminCredentialsAction(
 export async function logoutAction(): Promise<{ success: boolean }> {
   cookies().delete(ADMIN_AUTH_COOKIE_NAME);
   revalidatePath("/login");
-  revalidatePath("/admin/profile"); 
+  revalidatePath("/admin/profile"); // Revalidasi halaman profil juga
+  revalidatePath("/"); // Revalidasi halaman utama
   return { success: true };
 }
 
+// Interface untuk data awal yang dibutuhkan halaman profil admin
 export interface AdminProfileInitialData {
   skills: SkillData[];
-  currentHeroImageUrl: string; 
-  currentCvUrl: string;
+  currentHeroImageUrl: string; // URL atau Data URI dari gambar profil saat ini
+  currentCvUrl: string; // URL dari CV saat ini
 }
 
+// Fungsi untuk mengambil data awal untuk halaman profil admin
 export async function getAdminProfileInitialData(): Promise<{ success: boolean; data?: AdminProfileInitialData; error?: string }> {
   try {
     const client: MongoClient = await clientPromise;
+    // Menggunakan database default yang dikonfigurasi di MONGODB_URI
     const db = client.db();
     
+    // Mengambil data keahlian dari koleksi 'skills'
     const skillsCollection = db.collection<SkillData>("skills");
     const skills = await skillsCollection.find({}).sort({ name: 1 }).toArray();
+    // Konversi _id ObjectId ke string untuk serialisasi
     const mappedSkills = skills.map(s => ({ ...s, _id: s._id.toString() }));
 
     // Mengambil foto profil dari koleksi 'profile_settings'
+    // Koleksi 'profile_settings' akan berada di dalam database default
     const profileSettingsCollection = db.collection<ProfileSettingsDocument>("profile_settings");
-    const profileSettings = await profileSettingsCollection.findOne({});
+    const profileSettings = await profileSettingsCollection.findOne({}); // Ambil dokumen pengaturan tunggal
     
     let currentHeroImageUrl = "https://placehold.co/240x240.png?text=Profile"; // Default placeholder
     if (profileSettings && profileSettings.profileImageUri && profileSettings.profileImageUri.startsWith('data:image/')) {
       currentHeroImageUrl = profileSettings.profileImageUri;
     }
     
+    // Path CV saat ini masih dianggap statis dari folder public/download
     let currentCvUrl = "/download/Wahyu_Pratomo-cv.pdf"; 
-    // Logika untuk mengambil CV path bisa tetap atau diubah jika CV juga disimpan di DB. Saat ini masih dari public.
-    // Untuk menyederhanakan, kita asumsikan path CV masih hardcoded atau dikelola secara statis untuk saat ini.
+    // Anda bisa menambahkan logika di sini jika path CV juga disimpan di database
 
     return { 
       success: true, 

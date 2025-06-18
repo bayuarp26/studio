@@ -18,14 +18,15 @@ const projectInputSchema = z.object({
   tags: z.string().min(1, { message: "Tag tidak boleh kosong." }),
 });
 
+// Interface untuk struktur dokumen proyek yang akan dimasukkan ke database
 interface ProjectDocumentToInsert {
   title: string;
-  imageUrl: string; // Akan menyimpan Data URI
+  imageUrl: string; // Akan menyimpan Data URI gambar proyek
   imageHint: string;
   description: string;
   details: string[];
   tags: string[];
-  createdAt: Date;
+  createdAt: Date; // Tanggal pembuatan proyek
 }
 
 
@@ -33,9 +34,11 @@ export async function addProjectAction(
   data: z.infer<typeof projectInputSchema>
 ): Promise<{ success: boolean; error?: string; projectId?: string }> {
   try {
+    // Validasi input menggunakan skema Zod
     const validationResult = projectInputSchema.safeParse(data);
     if (!validationResult.success) {
       console.error("Validation error:", validationResult.error.flatten().fieldErrors);
+      // Mengambil pesan error pertama untuk ditampilkan ke pengguna
       const firstError = Object.values(validationResult.error.flatten().fieldErrors)[0]?.[0];
       return { success: false, error: firstError || "Data input tidak valid." };
     }
@@ -43,32 +46,39 @@ export async function addProjectAction(
     const validatedData = validationResult.data;
 
     const client: MongoClient = await clientPromise;
+    // Menggunakan database default yang dikonfigurasi di MONGODB_URI (misal: portofolioDB)
     const db = client.db(); 
+    // Koleksi 'projects' akan berada di dalam database default tersebut
     const projectsCollection: Collection<Document> = db.collection("projects");
 
+    // Memproses string 'details' menjadi array
     const detailsArray = validatedData.details
-      .split('\n')
-      .map(detail => detail.trim())
-      .filter(detail => detail.length > 0);
+      .split('\n') // Pisahkan berdasarkan baris baru
+      .map(detail => detail.trim()) // Hapus spasi di awal/akhir setiap detail
+      .filter(detail => detail.length > 0); // Hapus detail yang kosong
 
+    // Memproses string 'tags' menjadi array
     const tagsArray = validatedData.tags
-      .split('\n')
-      .map(tag => tag.trim())
-      .filter(tag => tag.length > 0);
+      .split('\n') // Pisahkan berdasarkan baris baru
+      .map(tag => tag.trim()) // Hapus spasi di awal/akhir setiap tag
+      .filter(tag => tag.length > 0); // Hapus tag yang kosong
 
+    // Struktur data proyek yang akan disimpan
     const projectToInsert: ProjectDocumentToInsert = {
       title: validatedData.title,
-      imageUrl: validatedData.imageUrl, // Simpan Data URI
+      imageUrl: validatedData.imageUrl, // Simpan Data URI gambar
       imageHint: validatedData.imageHint,
       description: validatedData.description,
       details: detailsArray,
       tags: tagsArray,
-      createdAt: new Date(), 
+      createdAt: new Date(), // Set tanggal pembuatan saat ini
     };
 
+    // Masukkan dokumen proyek ke koleksi
     const result = await projectsCollection.insertOne(projectToInsert);
 
     if (result.insertedId) {
+      // Revalidasi path untuk memperbarui cache Next.js
       revalidatePath("/"); 
       revalidatePath("/admin/add-project"); 
       revalidatePath("/admin/projects");
@@ -82,8 +92,8 @@ export async function addProjectAction(
     if (error instanceof Error) {
         errorMessage = error.message;
     }
-    // Removed redundant ZodError check as safeParse is used above
     return { success: false, error: errorMessage };
   }
 }
 
+    
