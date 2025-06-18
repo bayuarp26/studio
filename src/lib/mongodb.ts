@@ -10,15 +10,16 @@ const uri = process.env.MONGODB_URI;
 // Ensure the MONGODB_URI is in the correct format.
 // For MongoDB Atlas, it typically looks like:
 // mongodb+srv://<username>:<password>@<cluster-address>/<DATABASE_NAME>?retryWrites=true&w=majority
-// 
-// CRITICAL: The <DATABASE_NAME> part IS REQUIRED. 
-// If your URI looks like "...@cluster-address.mongodb.net/" (ending with a slash),
-// you MUST add your database name before any query parameters (e.g., "...@cluster-address.mongodb.net/myFirstDatabase?retryWrites=true&w=majority").
 //
-// The error "querySrv ENOTFOUND" often means the <cluster-address> is incorrect or not resolvable,
-// or the URI is not using the 'mongodb+srv://' prefix for an Atlas SRV connection when it should.
-// Also, ensure that your password in the URI does not contain special characters like '<' or '>' unless they are truly part of the password
-// and are properly URL-encoded if necessary.
+// CRITICAL: The <DATABASE_NAME> part IS REQUIRED. 
+// If your URI (from .env.local) looks like "...@cluster-address.mongodb.net/" (ending with a slash WITHOUT a database name),
+// you MUST add your database name before any query parameters.
+// For example, if your URI is: mongodb+srv://user:pass@cluster.mongodb.net/
+// And your database is 'myAppDB', it should become: mongodb+srv://user:pass@cluster.mongodb.net/myAppDB?retryWrites=true&w=majority
+//
+// Also, ensure that your password in the URI does not contain special characters like '<' or '>' 
+// unless they are truly part of the password and are properly URL-encoded if necessary.
+// For example, if your password is 'my<pass>word', the '<' and '>' might need encoding or removal if not part of the actual password.
 
 const options = {
   serverApi: {
