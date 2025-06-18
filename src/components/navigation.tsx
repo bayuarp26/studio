@@ -23,7 +23,7 @@ const NAV_VIEWPORT_OFFSET = 80; // Tinggi navbar dalam piksel (md:h-20 -> 80px)
 
 export default function Navigation({ activeSection, navLinks, profileName }: NavigationProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isHeroNameVisible, setIsHeroNameVisible] = useState(true); // Default true, asumsi hero name terlihat saat awal
+  const [isHeroNameVisible, setIsHeroNameVisible] = useState(true);
   const initials = profileName.split(' ').map(n => n[0]).join('').toUpperCase();
 
   useEffect(() => {
@@ -37,8 +37,8 @@ export default function Navigation({ activeSection, navLinks, profileName }: Nav
         setIsHeroNameVisible(entry.isIntersecting);
       },
       {
-        rootMargin: `-${NAV_VIEWPORT_OFFSET - 1}px 0px 0px 0px`, // Trigger tepat saat bagian atas hero name menyentuh bawah navbar
-        threshold: 0, // Segera trigger saat persentuhan terjadi
+        rootMargin: `-${NAV_VIEWPORT_OFFSET -1}px 0px 0px 0px`, // Trigger saat elemen hampir tertutup navbar
+        threshold: 0, 
       }
     );
 
@@ -55,7 +55,6 @@ export default function Navigation({ activeSection, navLinks, profileName }: Nav
     e.preventDefault();
     const element = document.getElementById(sectionId);
     if (element) {
-        // Offset sedikit kurang dari tinggi navbar agar bagian atas section terlihat pas di bawah navbar
         const yOffset = -NAV_VIEWPORT_OFFSET + 1; 
         const y = element.getBoundingClientRect().top + window.scrollY + yOffset;
         window.scrollTo({ top: y, behavior: 'smooth' });
@@ -71,14 +70,14 @@ export default function Navigation({ activeSection, navLinks, profileName }: Nav
           onClick={(e) => handleLinkClick(e, "hero")}
           className="text-xl font-bold text-primary hover:text-primary/80 transition-colors flex items-center"
         >
-          <div className="relative h-7 flex items-center overflow-hidden"> {/* Sesuaikan tinggi jika font lebih besar */}
+          <div className="relative h-7 flex items-center overflow-hidden"> {/* Container untuk animasi teks */}
             {/* Tampilkan Inisial (WP) jika nama hero terlihat */}
             <span
               className={cn(
                 "absolute inset-x-0 flex items-center justify-start transition-all duration-300 ease-in-out whitespace-nowrap",
                 isHeroNameVisible
-                  ? "opacity-100 translate-y-0"
-                  : "opacity-0 -translate-y-full"
+                  ? "opacity-100 translate-y-0" // Initials visible
+                  : "opacity-0 -translate-y-full" // Initials slide up and out
               )}
               aria-hidden={!isHeroNameVisible}
             >
@@ -89,8 +88,8 @@ export default function Navigation({ activeSection, navLinks, profileName }: Nav
               className={cn(
                 "absolute inset-x-0 flex items-center justify-start transition-all duration-300 ease-in-out whitespace-nowrap",
                 !isHeroNameVisible
-                  ? "opacity-100 translate-y-0"
-                  : "opacity-0 translate-y-full"
+                  ? "opacity-100 translate-y-0" // Full name visible
+                  : "opacity-0 translate-y-full" // Full name starts below, hidden, then slides in
               )}
               aria-hidden={isHeroNameVisible}
             >
