@@ -25,7 +25,7 @@ export default function ContactSection({ id, title, email, socialLinks }: Contac
         <p className="text-lg text-muted-foreground mb-8 mt-[-1.5rem]">
           Saya selalu terbuka untuk diskusi, kolaborasi, atau sekadar menyapa. Jangan ragu untuk menghubungi!
         </p>
-        <Card className="bg-card shadow-xl border border-border">
+        <Card className="bg-card shadow-xl border border-border transition-all duration-200 ease-out hover:scale-[0.98] hover:shadow-lg hover:brightness-[0.97]">
           <CardContent className="p-6 md:p-8 space-y-4">
             <a
               href={`mailto:${email}`}
@@ -43,8 +43,8 @@ export default function ContactSection({ id, title, email, socialLinks }: Contac
                 rel="noopener noreferrer"
                 className="w-full block"
               >
-                <Button 
-                  size="lg" 
+                <Button
+                  size="lg"
                   className="w-full text-base md:text-lg bg-blue-600 text-white hover:bg-blue-700"
                 >
                   <Linkedin className="mr-2 h-5 w-5" />
@@ -61,4 +61,3 @@ export default function ContactSection({ id, title, email, socialLinks }: Contac
     </SectionContainer>
   );
 }
-

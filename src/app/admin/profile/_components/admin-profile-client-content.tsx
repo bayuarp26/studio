@@ -1,20 +1,20 @@
 
-"use client"; 
+"use client";
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import SectionContainer from '@/components/section-container';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Home, ImageUp, ListChecks, FileText, UserCog, LogOut, KeyRound, PlusCircle, ListOrdered } from 'lucide-react'; 
+import { Home, ImageUp, ListChecks, FileText, UserCog, LogOut, KeyRound, PlusCircle, ListOrdered } from 'lucide-react';
 import UpdateProfileImageForm from './update-profile-image-form';
 import ManageSkillsSection from './manage-skills-section';
-import UpdateCVForm from './update-cv-form'; 
+import UpdateCVForm from './update-cv-form';
 import UpdateAdminCredentialsForm from './update-admin-credentials-form';
-import type { SkillData } from '@/app/page'; 
-import { logoutAction } from "../actions"; 
+import type { SkillData } from '@/app/page';
+import { logoutAction } from "../actions";
 import type { AdminProfileInitialData as AdminProfilePageData } from "../actions";
-import { useRouter } from "next/navigation"; 
-import { useToast } from "@/hooks/use-toast"; 
+import { useRouter } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState } from 'react';
 
 interface AdminProfileClientContentProps {
@@ -28,7 +28,7 @@ export default function AdminProfileClientContent({ initialData, serverError }: 
   const [data, setData] = useState<AdminProfilePageData | null>(initialData);
 
   useEffect(() => {
-    setData(initialData); 
+    setData(initialData);
   }, [initialData]);
 
   useEffect(() => {
@@ -50,7 +50,6 @@ export default function AdminProfileClientContent({ initialData, serverError }: 
         description: "Anda telah berhasil logout.",
       });
       router.push("/login");
-      // router.refresh(); // Dihapus, router.push sudah cukup
     } else {
        toast({
         variant: "destructive",
@@ -60,15 +59,15 @@ export default function AdminProfileClientContent({ initialData, serverError }: 
     }
   };
 
-  if (!data && !serverError) { 
+  if (!data && !serverError) {
     return (
       <SectionContainer id="admin-profile-loading" className="bg-background min-h-screen pt-24 md:pt-32 flex justify-center items-center">
         <p className="text-xl text-muted-foreground">Memuat data profil admin...</p>
       </SectionContainer>
     );
   }
-  
-  if (!data && serverError) { 
+
+  if (!data && serverError) {
      return (
       <SectionContainer id="admin-profile-error" className="bg-background min-h-screen pt-24 md:pt-32 flex flex-col justify-center items-center">
         <p className="text-xl text-destructive mb-4">Gagal memuat data profil.</p>
@@ -77,8 +76,8 @@ export default function AdminProfileClientContent({ initialData, serverError }: 
       </SectionContainer>
     );
   }
-  
-  if (!data) { 
+
+  if (!data) {
      return (
       <SectionContainer id="admin-profile-error" className="bg-background min-h-screen pt-24 md:pt-32 flex flex-col justify-center items-center">
         <p className="text-xl text-destructive mb-4">Data profil tidak tersedia.</p>
@@ -100,8 +99,8 @@ export default function AdminProfileClientContent({ initialData, serverError }: 
             </Link>
           </Button>
           <Button asChild variant="outline">
-            <Link href="/admin/projects"> {/* Menggunakan ListOrdered dari Add Project */}
-              <ListOrdered className="mr-2 h-4 w-4" /> 
+            <Link href="/admin/projects">
+              <ListOrdered className="mr-2 h-4 w-4" />
               Kelola Proyek
             </Link>
           </Button>
@@ -119,7 +118,7 @@ export default function AdminProfileClientContent({ initialData, serverError }: 
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <Card className="shadow-lg">
+        <Card className="shadow-lg transition-all duration-200 ease-out hover:scale-[0.98] hover:shadow-md hover:brightness-[0.97]">
           <CardHeader>
             <CardTitle className="flex items-center text-primary">
               <ImageUp className="mr-2 h-5 w-5" />
@@ -132,7 +131,7 @@ export default function AdminProfileClientContent({ initialData, serverError }: 
           </CardContent>
         </Card>
 
-        <Card className="shadow-lg">
+        <Card className="shadow-lg transition-all duration-200 ease-out hover:scale-[0.98] hover:shadow-md hover:brightness-[0.97]">
           <CardHeader>
             <CardTitle className="flex items-center text-primary">
               <UserCog className="mr-2 h-5 w-5" />
@@ -144,8 +143,8 @@ export default function AdminProfileClientContent({ initialData, serverError }: 
             <ManageSkillsSection initialSkills={data.skills} />
           </CardContent>
         </Card>
-        
-        <Card className="shadow-lg"> 
+
+        <Card className="shadow-lg transition-all duration-200 ease-out hover:scale-[0.98] hover:shadow-md hover:brightness-[0.97]">
           <CardHeader>
             <CardTitle className="flex items-center text-primary">
               <FileText className="mr-2 h-5 w-5" />
@@ -158,7 +157,7 @@ export default function AdminProfileClientContent({ initialData, serverError }: 
           </CardContent>
         </Card>
 
-        <Card className="shadow-lg">
+        <Card className="shadow-lg transition-all duration-200 ease-out hover:scale-[0.98] hover:shadow-md hover:brightness-[0.97]">
           <CardHeader>
             <CardTitle className="flex items-center text-primary">
               <KeyRound className="mr-2 h-5 w-5" />

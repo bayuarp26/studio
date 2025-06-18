@@ -1,5 +1,5 @@
 
-"use client"; 
+"use client";
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -11,8 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { PlusCircle, UserCog, Home, LogOut, ListOrdered } from 'lucide-react'; // Menggunakan ListOrdered
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { logoutAction } from "../../profile/actions"; 
-import type { ProjectDataForAdmin as ProjectData } from "../actions"; 
+import { logoutAction } from "../../profile/actions";
+import type { ProjectDataForAdmin as ProjectData } from "../actions";
 import { useEffect, useState } from 'react';
 
 interface ManageProjectsClientContentProps {
@@ -26,7 +26,7 @@ export default function ManageProjectsClientContent({ initialProjects, serverErr
   const [projects, setProjects] = useState<ProjectData[]>(initialProjects);
 
   useEffect(() => {
-    setProjects(initialProjects); 
+    setProjects(initialProjects);
   }, [initialProjects]);
 
   useEffect(() => {
@@ -37,7 +37,7 @@ export default function ManageProjectsClientContent({ initialProjects, serverErr
         description: serverError,
       });
     }
-  }, [serverError, toast]); 
+  }, [serverError, toast]);
 
 
   const handleLogout = async () => {
@@ -48,7 +48,6 @@ export default function ManageProjectsClientContent({ initialProjects, serverErr
         description: "Anda telah berhasil logout.",
       });
       router.push("/login");
-      // router.refresh(); // Dihapus, router.push sudah cukup
     } else {
        toast({
         variant: "destructive",
@@ -57,7 +56,7 @@ export default function ManageProjectsClientContent({ initialProjects, serverErr
       });
     }
   };
-  
+
   const projectsToDisplay = projects || [];
 
 
@@ -90,7 +89,7 @@ export default function ManageProjectsClientContent({ initialProjects, serverErr
             </Button>
         </div>
       </div>
-      
+
       {serverError && projectsToDisplay.length === 0 ? (
          <div className="text-center py-10">
           <p className="text-xl text-destructive">Gagal memuat proyek.</p>
@@ -105,7 +104,7 @@ export default function ManageProjectsClientContent({ initialProjects, serverErr
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {projectsToDisplay.map((project) => (
-            <Card key={project._id} className="flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <Card key={project._id} className="flex flex-col overflow-hidden shadow-lg transition-all duration-200 ease-out hover:scale-[0.98] hover:shadow-md hover:brightness-[0.97]">
               <CardHeader className="p-0">
                 <div className="relative aspect-[16/9] w-full">
                   <Image
@@ -124,7 +123,7 @@ export default function ManageProjectsClientContent({ initialProjects, serverErr
                   {project.description}
                 </CardDescription>
                 <div className="flex flex-wrap gap-1 mb-1">
-                    {project.tags.slice(0, 4).map((tag, index) => ( 
+                    {project.tags.slice(0, 4).map((tag, index) => (
                        <Badge key={index} variant="secondary" className="text-xs px-1.5 py-0.5">{tag}</Badge>
                     ))}
                     {project.tags.length > 4 && <Badge variant="outline" className="text-xs px-1.5 py-0.5">+{project.tags.length - 4}</Badge>}
