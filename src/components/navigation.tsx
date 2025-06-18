@@ -3,10 +3,9 @@
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { Menu } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react'; // Ditambahkan useEffect, useRef
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-
 
 interface NavLink {
   id: string;
@@ -20,21 +19,83 @@ interface NavigationProps {
   profileName: string;
 }
 
+const NAV_VIEWPORT_OFFSET = 80; // Perkiraan tinggi navbar dalam piksel (md:h-20 -> 80px)
+
 export default function Navigation({ activeSection, navLinks, profileName }: NavigationProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isHeroNameVisible, setIsHeroNameVisible] = useState(true);
   const initials = profileName.split(' ').map(n => n[0]).join('').toUpperCase();
+
+  useEffect(() => {
+    const heroNameElement = document.getElementById('hero-main-name');
+    if (!heroNameElement) {
+      // console.warn("Element 'hero-main-name' tidak ditemukan untuk IntersectionObserver.");
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsHeroNameVisible(entry.isIntersecting);
+      },
+      {
+        rootMargin: `-${NAV_VIEWPORT_OFFSET}px 0px 0px 0px`, // Memicu sedikit di atas bagian bawah navbar
+        threshold: 0.1, // Minimal 10% dari elemen 'hero-main-name' harus terlihat
+      }
+    );
+
+    observer.observe(heroNameElement);
+
+    return () => {
+      if (heroNameElement) {
+        observer.unobserve(heroNameElement);
+      }
+    };
+  }, []);
 
   const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
     e.preventDefault();
-    document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
-    setMobileMenuOpen(false); 
+    const element = document.getElementById(sectionId);
+    if (element) {
+        const yOffset = -NAV_VIEWPORT_OFFSET + 20; // Sesuaikan offset agar tidak tertutup navbar
+        const y = element.getBoundingClientRect().top + window.scrollY + yOffset;
+        window.scrollTo({ top: y, behavior: 'smooth' });
+    }
+    setMobileMenuOpen(false);
   };
 
   return (
     <nav className="fixed top-0 left-0 right-0 bg-background/80 backdrop-blur-md shadow-md z-50 h-16 md:h-20 flex items-center border-b border-border">
       <div className="container mx-auto flex justify-between items-center px-4 sm:px-6 lg:px-8">
-        <Link href="#hero" onClick={(e) => handleLinkClick(e, "hero")} className="text-xl font-bold text-primary hover:text-primary/80 transition-colors">
-          {initials}
+        <Link
+          href="#hero"
+          onClick={(e) => handleLinkClick(e, "hero")}
+          className="relative text-xl font-bold text-primary hover:text-primary/80 transition-colors flex items-center justify-center"
+          style={{ minWidth: '3rem' }} // Memberikan ruang minimum, bisa disesuaikan
+        >
+          <div className="relative h-6 overflow-hidden"> {/* Sesuaikan h-6 jika perlu, misal text-xl -> h-7 */}
+            <span
+              className={cn(
+                "absolute inset-0 flex items-center justify-center transition-all duration-300 ease-in-out whitespace-nowrap",
+                isHeroNameVisible
+                  ? "opacity-100 transform-none"
+                  : "opacity-0 -translate-y-full" 
+              )}
+              aria-hidden={!isHeroNameVisible}
+            >
+              {initials}
+            </span>
+            <span
+              className={cn(
+                "absolute inset-0 flex items-center justify-center transition-all duration-300 ease-in-out whitespace-nowrap",
+                !isHeroNameVisible
+                  ? "opacity-100 transform-none"
+                  : "opacity-0 translate-y-full"
+              )}
+              aria-hidden={isHeroNameVisible}
+            >
+              {profileName}
+            </span>
+          </div>
         </Link>
 
         <div className="hidden md:flex space-x-4 sm:space-x-6">

@@ -33,7 +33,7 @@ export default function ContactSection({ id, title, email, socialLinks }: Contac
             >
             <Button size="lg" className="w-full text-base md:text-lg">
                 <Send className="mr-2 h-5 w-5" />
-                Kirim Email ke Saya
+                Kirim Email
             </Button>
             </a>
             {socialLinks.linkedin && (

@@ -20,17 +20,15 @@ import {
   DialogFooter
 } from "@/components/ui/dialog";
 import { useIsMobile } from "@/hooks/use-mobile";
-import type { PortfolioDataType } from './page'; // Menggunakan PortfolioDataType
+import type { PortfolioDataType } from './page'; 
 
-interface PortfolioContentProps {
-  portfolioData: PortfolioDataType; // Menggunakan PortfolioDataType
-}
+// Konstanta ini digunakan untuk offset saat scroll dan menentukan active section
+const NAV_HEIGHT_OFFSET = 80; // Sesuaikan dengan tinggi navbar (md:h-20 -> 80px)
 
-const NAV_HEIGHT_OFFSET = 70; 
-
-export default function PortfolioContent({ portfolioData }: PortfolioContentProps) {
+export default function PortfolioContent({ portfolioData }: { portfolioData: PortfolioDataType }) {
   const [activeSection, setActiveSection] = useState("hero");
-  const sectionRefs = useRef<{[key: string]: HTMLElement | null}>({});
+  // sectionRefs tidak lagi dibutuhkan secara eksplisit di sini karena handleScroll menggunakan getElementById
+  // const sectionRefs = useRef<{[key: string]: HTMLElement | null}>({}); 
 
   const isMobile = useIsMobile();
   const [isDeviceAlertOpen, setIsDeviceAlertOpen] = useState(false);
@@ -56,39 +54,49 @@ export default function PortfolioContent({ portfolioData }: PortfolioContentProp
 
 
   const handleScroll = useCallback(() => {
-    const scrollPosition = window.scrollY + NAV_HEIGHT_OFFSET + window.innerHeight / 3;
-    let currentSection = "hero";
+    // Offset sedikit lebih besar dari tinggi navbar untuk memastikan section benar-benar "di bawah" nav
+    const scrollPositionWithOffset = window.scrollY + NAV_HEIGHT_OFFSET + 20; 
+    let currentSectionId = "hero"; // Default ke hero
 
     for (const sectionId of allSectionIds) {
       const element = document.getElementById(sectionId);
       if (element) {
-         sectionRefs.current[sectionId] = element;
-        if (element.offsetTop <= scrollPosition) {
-          if (element.offsetTop + element.offsetHeight > scrollPosition) {
-             currentSection = sectionId;
-          } else if (scrollPosition >= document.body.scrollHeight - window.innerHeight - NAV_HEIGHT_OFFSET) { 
-             currentSection = allSectionIds[allSectionIds.length -1];
+        const elementTop = element.offsetTop;
+        const elementBottom = elementTop + element.offsetHeight;
+
+        // Jika bagian atas elemen sudah lewat atau sama dengan posisi scroll
+        if (elementTop <= scrollPositionWithOffset) {
+          // Jika bagian bawah elemen masih di bawah posisi scroll (artinya elemen sedang terlihat)
+          if (elementBottom > scrollPositionWithOffset) {
+            currentSectionId = sectionId;
+            break; // Keluar loop karena section aktif sudah ditemukan
           } else {
-            currentSection = sectionId;
+            // Jika sudah scroll melewati elemen ini, maka section ini adalah yang terakhir dilewati
+            currentSectionId = sectionId; 
           }
         } else {
-          if (allSectionIds.indexOf(sectionId) === 0 && currentSection === "hero") break; 
-          if (currentSection !== "hero" && allSectionIds.indexOf(currentSection) < allSectionIds.indexOf(sectionId)) break;
+          // Jika elemen pertama (hero) belum tercapai, jangan ubah dari default "hero"
+          // Jika elemen lain belum tercapai, berarti section aktif adalah yang sebelumnya
+          break;
         }
       }
     }
-    setActiveSection(currentSection);
+     // Khusus untuk kasus jika sudah scroll sampai paling bawah halaman
+    if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 50) { // toleransi 50px
+        currentSectionId = allSectionIds[allSectionIds.length - 1]; // Set ke section terakhir
+    }
+
+
+    setActiveSection(currentSectionId);
   }, [allSectionIds]);
 
   useEffect(() => {
-    allSectionIds.forEach(id => {
-      sectionRefs.current[id] = document.getElementById(id);
-    });
+    // Tidak perlu lagi mengisi sectionRefs di sini
     
     handleScroll(); 
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [handleScroll, allSectionIds]);
+  }, [handleScroll]);
 
   return (
     <div className="bg-background text-foreground min-h-screen flex flex-col">
@@ -122,7 +130,7 @@ export default function PortfolioContent({ portfolioData }: PortfolioContentProp
         navLinks={navLinks} 
         profileName={portfolioData.name}
       />
-      <main className="flex-grow pt-16 md:pt-20">
+      <main className="flex-grow pt-16 md:pt-20"> {/* pt-16 (64px) md:pt-20 (80px) sesuai tinggi navbar */}
         <HeroSection
           id="hero"
           name={portfolioData.name}
@@ -155,7 +163,7 @@ export default function PortfolioContent({ portfolioData }: PortfolioContentProp
           id="contact"
           title="Hubungi Saya"
           email={portfolioData.contactEmail}
-          socialLinks={portfolioData.socialLinks} // Passed socialLinks here
+          socialLinks={portfolioData.socialLinks}
         />
       </main>
       <Footer 
