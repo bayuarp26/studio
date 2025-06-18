@@ -11,6 +11,9 @@ export async function deleteProjectAction(
   if (!projectId || typeof projectId !== 'string') {
     return { success: false, error: "ID proyek tidak valid." };
   }
+   if (!ObjectId.isValid(projectId)) {
+    return { success: false, error: "Format ID proyek tidak valid." };
+  }
 
   try {
     const client: MongoClient = await clientPromise;
@@ -28,18 +31,10 @@ export async function deleteProjectAction(
     }
   } catch (error) {
     console.error("Error in deleteProjectAction:", error);
-    let errorMessage = "Terjadi kesalahan pada server saat menghapus proyek.";
-    if (error instanceof Error) {
-        
-        errorMessage = error.message.includes("Argument passed in must be a single String of 12 bytes or a string of 24 hex characters")
-          ? "Format ID proyek tidak valid."
-          : error.message;
-    }
-    return { success: false, error: errorMessage };
+    return { success: false, error: "Terjadi kesalahan pada server saat menghapus proyek." };
   }
 }
 
-// Interface for the data structure the admin page component expects
 export interface ProjectDataForAdmin {
   _id: string;
   title: string;
@@ -51,7 +46,6 @@ export interface ProjectDataForAdmin {
   createdAt?: Date;
 }
 
-// Interface for the document structure in MongoDB
 interface ProjectDocumentFromDB extends Document {
   _id: ObjectId;
   title: string;
@@ -79,16 +73,12 @@ export async function getAdminProjectsAction(): Promise<{ success: boolean; proj
       description: p.description,
       details: p.details,
       tags: p.tags,
-      createdAt: p.createdAt, // This should be a Date object
+      createdAt: p.createdAt,
     }));
 
     return { success: true, projects };
   } catch (error) {
     console.error("Error in getAdminProjectsAction:", error);
-    let errorMessage = "Terjadi kesalahan pada server saat mengambil proyek.";
-    if (error instanceof Error) {
-        errorMessage = error.message;
-    }
-    return { success: false, error: errorMessage };
+    return { success: false, error: "Terjadi kesalahan pada server saat mengambil proyek." };
   }
 }

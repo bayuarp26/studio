@@ -71,14 +71,14 @@ export async function addProjectAction(
     if (result.insertedId) {
       revalidatePath("/"); 
       revalidatePath("/admin/add-project"); 
-      revalidatePath("/admin/projects"); // Revalidasi halaman daftar proyek admin
+      revalidatePath("/admin/projects");
       return { success: true, projectId: result.insertedId.toString() };
     } else {
       return { success: false, error: "Gagal menyimpan proyek ke database." };
     }
   } catch (error) {
     console.error("Error in addProjectAction:", error);
-    let errorMessage = "Terjadi kesalahan pada server.";
+    let errorMessage = "Terjadi kesalahan pada server saat menambahkan proyek.";
     if (error instanceof Error) {
         errorMessage = error.message;
     }
@@ -88,5 +88,3 @@ export async function addProjectAction(
     return { success: false, error: errorMessage };
   }
 }
-
-    

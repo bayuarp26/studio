@@ -31,7 +31,8 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  serverComponentsExternalPackages: [], // bcrypt and @mapbox/node-pre-gyp removed
+  // bcryptjs adalah murni JavaScript, jadi tidak perlu diexternalize
+  serverComponentsExternalPackages: [], 
 };
 
 export default nextConfig;

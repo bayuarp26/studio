@@ -7,23 +7,20 @@ import clientPromise from "@/lib/mongodb";
 import type { MongoClient, Collection, Document, ObjectId } from 'mongodb';
 import fs from 'fs/promises';
 import path from 'path';
-import type { SkillData, ProfileDataType } from "@/app/page"; // Pastikan path benar
+import type { SkillData } from "@/app/page";
 import { cookies } from "next/headers";
-import { hashPassword, comparePassword } from "@/lib/authUtils"; // createSessionToken tidak diperlukan di sini
+import { hashPassword, comparePassword } from "@/lib/authUtils";
 
 const ADMIN_AUTH_COOKIE_NAME = 'admin-auth-token';
 
-// Skema untuk validasi input saat memperbarui foto profil
 const profileImageSchema = z.object({
   heroImageUrl: z.string().refine(val => val.startsWith('data:image/'), {
     message: "URL Gambar harus berupa Data URI yang valid.",
   }),
 });
 
-// Skema untuk validasi nama keahlian
 const skillNameSchema = z.string().min(2, { message: "Nama keahlian minimal 2 karakter." });
 
-// Konstanta dan skema untuk validasi file CV
 const MAX_CV_SIZE = 2 * 1024 * 1024; // 2MB
 const ACCEPTED_CV_TYPES = ["application/pdf"];
 
@@ -34,14 +31,13 @@ const cvFileSchema = z.instanceof(File)
     "Format file CV tidak valid. Harap unggah file PDF."
   );
 
-// Skema untuk validasi kredensial admin
 const adminCredentialsSchema = z.object({
   currentPassword: z.string().min(1, "Password saat ini tidak boleh kosong."),
-  newUsername: z.string().min(3, "Username baru minimal 3 karakter.").optional().or(z.literal('')), // Boleh kosong jika tidak ingin diubah
-  newPassword: z.string().min(6, "Password baru minimal 6 karakter.").optional().or(z.literal('')), // Boleh kosong jika tidak ingin diubah
+  newUsername: z.string().min(3, "Username baru minimal 3 karakter.").optional().or(z.literal('')),
+  newPassword: z.string().min(6, "Password baru minimal 6 karakter.").optional().or(z.literal('')),
 }).refine(data => data.newUsername || data.newPassword, {
     message: "Setidaknya username baru atau password baru harus diisi.",
-    path: ["newUsername"] // Path bisa ke salah satu field, atau field umum
+    path: ["newUsername"]
 });
 
 interface AdminUserDocument extends Document {
@@ -50,16 +46,12 @@ interface AdminUserDocument extends Document {
   hashedPassword?: string;
 }
 
-
 export async function updateProfileImageAction(
   imageDataUri: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    // Ambil token dari cookie untuk verifikasi
     const tokenCookie = cookies().get(ADMIN_AUTH_COOKIE_NAME);
     if (!tokenCookie) return { success: false, error: "Tidak terautentikasi." };
-    // Verifikasi token bisa ditambahkan di sini jika perlu lapisan keamanan ekstra untuk action ini
-    // Untuk saat ini, kita asumsikan middleware sudah menangani autentikasi dasar.
 
     const validationResult = profileImageSchema.safeParse({ heroImageUrl: imageDataUri });
     if (!validationResult.success) {
@@ -68,41 +60,27 @@ export async function updateProfileImageAction(
     }
 
     const validatedDataUri = validationResult.data.heroImageUrl;
-    const pageFilePath = path.join(process.cwd(), 'src', 'app', 'page.tsx');
-    let fileContent = await fs.readFile(pageFilePath, 'utf-8');
-
-    // Regex untuk mengganti heroImageUrl
-    const heroRegex = /(heroImageUrl:\s*["'])(data:image\/[^;]+;base64,[^"']+)(["'])/;
-    if (!heroRegex.test(fileContent)) {
-        console.warn("Peringatan: Pola heroImageUrl tidak cocok atau tidak menggunakan Data URI di src/app/page.tsx.");
-        // Mencoba regex yang lebih umum jika formatnya sedikit berbeda
-        const altHeroRegex = /(heroImageUrl:\s*["'])([^"']+)(["'])/;
-        if (altHeroRegex.test(fileContent)){
-            fileContent = fileContent.replace(altHeroRegex, `$1${validatedDataUri}$3`);
-        } else {
-            return { success: false, error: "Pola heroImageUrl tidak ditemukan di src/app/page.tsx. Periksa format file." };
-        }
-    } else {
-        fileContent = fileContent.replace(heroRegex, `$1${validatedDataUri}$3`);
-    }
     
-
-    // Regex untuk mengganti about.imageUrl
-    const aboutImageRegex = /(about:\s*\{\s*[\s\S]*?imageUrl:\s*["'])(data:image\/[^;]+;base64,[^"']+)(["'])/;
-     if (!aboutImageRegex.test(fileContent)) {
-      console.warn("Peringatan: Pola about.imageUrl tidak cocok atau tidak menggunakan Data URI di src/app/page.tsx. Foto 'Tentang Saya' mungkin tidak diperbarui.");
-       const altAboutRegex = /(about:\s*\{\s*[\s\S]*?imageUrl:\s*["'])([^"']+)(["'])/;
-        if (altAboutRegex.test(fileContent)){
-            fileContent = fileContent.replace(altAboutRegex, `$1${validatedDataUri}$3`);
-        } else {
-             console.error("Pola about.imageUrl juga tidak ditemukan dengan regex alternatif.");
-        }
-    } else {
-      fileContent = fileContent.replace(aboutImageRegex, `$1${validatedDataUri}$3`);
+    // Ekstrak tipe gambar dan data base64
+    const matches = validatedDataUri.match(/^data:(image\/(.+?));base64,(.*)$/);
+    if (!matches || matches.length !== 4) {
+      return { success: false, error: "Format Data URI gambar tidak valid." };
     }
-    
-    await fs.writeFile(pageFilePath, fileContent, 'utf-8');
+    // const imageType = matches[1]; // e.g., "image/png"
+    // const imageExtension = matches[2]; // e.g., "png"
+    const base64Data = matches[3];
+    const imageBuffer = Buffer.from(base64Data, 'base64');
 
+    const publicDir = path.join(process.cwd(), 'public');
+    const imagesDir = path.join(publicDir, 'images');
+    const imagePath = path.join(imagesDir, 'profile.png'); // Nama file tetap profile.png
+
+    await fs.mkdir(imagesDir, { recursive: true }); // Buat folder images jika belum ada
+    await fs.writeFile(imagePath, imageBuffer);
+
+    // src/app/page.tsx sekarang sudah merujuk ke /images/profile.png,
+    // jadi kita tidak perlu mengubah file page.tsx lagi di sini.
+    // Cukup revalidate path untuk memastikan Next.js menyajikan gambar baru.
     revalidatePath('/'); 
     revalidatePath('/admin/profile'); 
     return { success: true };
@@ -116,7 +94,6 @@ export async function updateProfileImageAction(
     return { success: false, error: errorMessage };
   }
 }
-
 
 export async function addSkillAction(
   name: string
@@ -155,11 +132,7 @@ export async function addSkillAction(
     }
   } catch (error) {
     console.error("Error in addSkillAction:", error);
-    let errorMessage = "Terjadi kesalahan pada server.";
-     if (error instanceof Error) {
-        errorMessage = error.message;
-    }
-    return { success: false, error: errorMessage };
+    return { success: false, error: "Terjadi kesalahan pada server saat menambahkan keahlian." };
   }
 }
 
@@ -175,7 +148,7 @@ export async function deleteSkillAction(
     const db = client.db();
     const skillsCollection: Collection<Document> = db.collection("skills");
     
-    const { ObjectId } = require('mongodb'); // Pastikan ObjectId diimpor dengan benar
+    const { ObjectId } = require('mongodb');
     if (!ObjectId.isValid(skillId)) {
         return { success: false, error: "Format ID keahlian tidak valid." };
     }
@@ -190,11 +163,7 @@ export async function deleteSkillAction(
     }
   } catch (error) {
     console.error("Error in deleteSkillAction:", error);
-    let errorMessage = "Terjadi kesalahan pada server saat menghapus keahlian.";
-    if (error instanceof Error) {
-        errorMessage = error.message;
-    }
-    return { success: false, error: errorMessage };
+    return { success: false, error: "Terjadi kesalahan pada server saat menghapus keahlian." };
   }
 }
 
@@ -226,18 +195,17 @@ export async function updateCVAction(
     const buffer = Buffer.from(bytes);
     await fs.writeFile(cvFilePath, buffer);
 
+    // Update cvUrl di src/app/page.tsx (mempertahankan mekanisme ini untuk CV)
     const pageFilePath = path.join(process.cwd(), 'src', 'app', 'page.tsx');
     let fileContent = await fs.readFile(pageFilePath, 'utf-8');
     
     const cvUrlRegex = /(cvUrl:\s*["'])(.*?)(["'])/;
-    const newCvUrl = `/download/${newFilename}`; // Path relatif ke public folder
+    const newCvUrl = `/download/${newFilename}`;
     
     if (cvUrlRegex.test(fileContent)) {
         fileContent = fileContent.replace(cvUrlRegex, `$1${newCvUrl}$3`);
     } else {
         console.warn("Peringatan: Pola cvUrl tidak ditemukan di src/app/page.tsx. URL CV mungkin tidak diperbarui di sana.");
-        // Jika ingin mengembalikan error jika pola tidak ditemukan:
-        // return { success: false, error: "Pola cvUrl tidak ditemukan di src/app/page.tsx."};
     }
     await fs.writeFile(pageFilePath, fileContent, 'utf-8');
 
@@ -247,11 +215,7 @@ export async function updateCVAction(
 
   } catch (error) {
     console.error("Error in updateCVAction:", error);
-    let errorMessage = "Terjadi kesalahan pada server saat memperbarui CV.";
-    if (error instanceof Error) {
-      errorMessage = error.message;
-    }
-    return { success: false, error: errorMessage };
+    return { success: false, error: "Terjadi kesalahan pada server saat memperbarui CV." };
   }
 }
 
@@ -276,9 +240,6 @@ export async function updateAdminCredentialsAction(
     const db = client.db();
     const adminUsersCollection: Collection<AdminUserDocument> = db.collection("admin_users");
     
-    // Ambil pengguna admin saat ini (asumsi hanya ada satu atau berdasarkan token jika ada multi-admin)
-    // Untuk sistem sederhana ini, kita bisa mengambil pengguna admin pertama.
-    // Idealnya, Anda akan mengidentifikasi admin berdasarkan ID dari token sesi.
     const adminUser = await adminUsersCollection.findOne({}); 
 
     if (!adminUser || !adminUser.hashedPassword) {
@@ -307,11 +268,9 @@ export async function updateAdminCredentialsAction(
       { $set: updateData }
     );
 
-    // Hapus cookie sesi untuk memaksa login ulang dengan kredensial baru
     cookies().delete(ADMIN_AUTH_COOKIE_NAME);
     
-    revalidatePath("/admin/profile"); // Revalidate path profil admin
-    // Tidak perlu revalidate path login, karena itu halaman publik
+    revalidatePath("/admin/profile");
     return { success: true };
 
   } catch (error) {
@@ -325,43 +284,26 @@ export async function logoutAction(): Promise<{ success: boolean }> {
   return { success: true };
 }
 
-
-// Fungsi untuk mengambil data awal untuk halaman profil admin
-interface AdminProfileInitialData {
+export interface AdminProfileInitialData {
   skills: SkillData[];
-  currentHeroImageUrl: string; // Atau path default
-  currentCvUrl: string; // Atau path default
+  currentHeroImageUrl: string;
+  currentCvUrl: string;
 }
 
 export async function getAdminProfileInitialData(): Promise<{ success: boolean; data?: AdminProfileInitialData; error?: string }> {
   try {
-    // 1. Ambil Skills dari MongoDB
     const client: MongoClient = await clientPromise;
     const db = client.db();
     const skillsCollection = db.collection<SkillData>("skills");
     const skills = await skillsCollection.find({}).sort({ name: 1 }).toArray();
     const mappedSkills = skills.map(s => ({ ...s, _id: s._id.toString() }));
 
-    // 2. Baca heroImageUrl dan cvUrl dari src/app/page.tsx
-    // Ini pendekatan sederhana, untuk aplikasi lebih besar, pertimbangkan menyimpan ini di DB atau file konfigurasi terpisah.
+    const currentHeroImageUrl = "/images/profile.png"; // Path statis sekarang
+
+    // Baca cvUrl dari src/app/page.tsx (mempertahankan mekanisme ini untuk CV)
     const pageFilePath = path.join(process.cwd(), 'src', 'app', 'page.tsx');
     const fileContent = await fs.readFile(pageFilePath, 'utf-8');
     
-    let currentHeroImageUrl = "/profile.png"; // Default
-    const heroRegex = /heroImageUrl:\s*["'](data:image\/[^;]+;base64,[^"']+?)["']/;
-    const heroMatch = fileContent.match(heroRegex);
-    if (heroMatch && heroMatch[1]) {
-      currentHeroImageUrl = heroMatch[1];
-    } else {
-        const altHeroRegex = /heroImageUrl:\s*["']([^"']+?)["']/;
-        const altHeroMatch = fileContent.match(altHeroRegex);
-        if (altHeroMatch && altHeroMatch[1]) {
-            currentHeroImageUrl = altHeroMatch[1];
-        } else {
-            console.warn("Tidak dapat mengekstrak heroImageUrl dari page.tsx, menggunakan default.");
-        }
-    }
-
     let currentCvUrl = "/download/Wahyu_Pratomo-cv.pdf"; // Default
     const cvRegex = /cvUrl:\s*["'](.*?)["']/;
     const cvMatch = fileContent.match(cvRegex);
@@ -382,8 +324,6 @@ export async function getAdminProfileInitialData(): Promise<{ success: boolean; 
 
   } catch (error) {
     console.error("Error in getAdminProfileInitialData:", error);
-    let errorMessage = "Gagal mengambil data awal profil admin.";
-    if (error instanceof Error) errorMessage = error.message;
-    return { success: false, error: errorMessage };
+    return { success: false, error: "Gagal mengambil data awal profil admin." };
   }
 }
