@@ -155,6 +155,7 @@ export default function PortfolioContent({ portfolioData }: PortfolioContentProp
           id="contact"
           title="Hubungi Saya"
           email={portfolioData.contactEmail}
+          socialLinks={portfolioData.socialLinks} // Passed socialLinks here
         />
       </main>
       <Footer 

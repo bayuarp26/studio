@@ -2,15 +2,22 @@
 import SectionContainer from './section-container';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Mail, Send } from 'lucide-react';
+import { Mail, Send, Linkedin } from 'lucide-react'; // Added Linkedin icon
+
+interface SocialLinks {
+  // Only linkedin is needed here, but keep it open for future if necessary
+  linkedin: string;
+  // github?: string; // Add if other social links are needed in contact section
+}
 
 interface ContactSectionProps {
   id: string;
   title: string;
   email: string;
+  socialLinks: SocialLinks; // Added socialLinks prop
 }
 
-export default function ContactSection({ id, title, email }: ContactSectionProps) {
+export default function ContactSection({ id, title, email, socialLinks }: ContactSectionProps) {
   return (
     <SectionContainer id={id} className="bg-secondary"> {/* Light gray secondary background */}
       <div className="max-w-xl mx-auto text-center">
@@ -19,18 +26,31 @@ export default function ContactSection({ id, title, email }: ContactSectionProps
           Saya selalu terbuka untuk diskusi, kolaborasi, atau sekadar menyapa. Jangan ragu untuk menghubungi!
         </p>
         <Card className="bg-card shadow-xl border border-border">
-          <CardContent className="p-6 md:p-8">
+          <CardContent className="p-6 md:p-8 space-y-4">
             <a
               href={`mailto:${email}`}
-              className="w-full"
+              className="w-full block"
             >
             <Button size="lg" className="w-full text-base md:text-lg">
                 <Send className="mr-2 h-5 w-5" />
                 Kirim Email ke Saya
             </Button>
             </a>
-            <p className="text-xs text-muted-foreground mt-4">
-              Atau langsung kirim ke: <strong className="text-foreground">{email}</strong>
+            {socialLinks.linkedin && (
+              <a
+                href={socialLinks.linkedin}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full block"
+              >
+                <Button size="lg" variant="outline" className="w-full text-base md:text-lg border-primary text-primary hover:bg-primary hover:text-primary-foreground">
+                  <Linkedin className="mr-2 h-5 w-5" />
+                  Terhubung di LinkedIn
+                </Button>
+              </a>
+            )}
+            <p className="text-xs text-muted-foreground pt-2">
+              Email: <strong className="text-foreground">{email}</strong>
             </p>
           </CardContent>
         </Card>
