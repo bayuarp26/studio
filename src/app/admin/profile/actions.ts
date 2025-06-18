@@ -5,8 +5,8 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import clientPromise from "@/lib/mongodb";
 import type { MongoClient, Collection, Document, ObjectId } from 'mongodb';
-import fs from 'fs/promises';
-import path from 'path';
+// import fs from 'fs/promises'; // fs is no longer needed for CV
+// import path from 'path'; // path is no longer needed for CV
 import type { SkillData } from "@/app/page";
 import { cookies } from "next/headers";
 import { hashPassword, comparePassword } from "@/lib/authUtils";
@@ -25,13 +25,19 @@ const skillNameSchema = z.string().min(2, { message: "Nama keahlian minimal 2 ka
 const MAX_CV_SIZE = 2 * 1024 * 1024; // 2MB
 const ACCEPTED_CV_TYPES = ["application/pdf"];
 
-// Skema untuk validasi file CV
+// Skema untuk validasi file CV (sebelum konversi ke Data URI)
 const cvFileSchema = z.instanceof(File)
   .refine((file) => file.size <= MAX_CV_SIZE, `Ukuran file CV maksimal ${MAX_CV_SIZE / (1024*1024)}MB.`)
   .refine(
     (file) => ACCEPTED_CV_TYPES.includes(file.type),
     "Format file CV tidak valid. Harap unggah file PDF."
   );
+
+// Skema untuk validasi Data URI CV PDF
+const cvDataUriSchema = z.string().refine(val => val.startsWith('data:application/pdf;base64,'), {
+  message: "CV harus berupa Data URI PDF yang valid.",
+});
+
 
 // Skema untuk validasi kredensial admin
 const adminCredentialsSchema = z.object({
@@ -53,9 +59,9 @@ interface AdminUserDocument extends Document {
 // Interface untuk dokumen pengaturan profil di database
 // Dokumen ini akan disimpan dalam koleksi 'profile_settings' di dalam database default (misal: portofolioDB)
 interface ProfileSettingsDocument extends Document {
-  _id?: ObjectId; 
+  _id?: ObjectId;
   profileImageUri?: string; // Menyimpan Data URI dari gambar profil
-  cvUrl?: string; // Menyimpan path publik ke file CV
+  cvDataUri?: string; // Menyimpan Data URI dari file CV
 }
 
 
@@ -81,21 +87,22 @@ export async function updateProfileImageAction(
     }
     const validatedDataUri = validationResult.data;
     console.log("updateProfileImageAction: Validasi Data URI berhasil.");
-    
+
     const client: MongoClient = await clientPromise;
     const db = client.db(); // Menggunakan database default (misal: portofolioDB)
-    const profileSettingsCollection: Collection<ProfileSettingsDocument> = db.collection("profile_settings"); // Koleksi 'profile_settings' di dalam portofolioDB
+    // Koleksi 'profile_settings' akan berada di dalam database default tersebut
+    const profileSettingsCollection: Collection<ProfileSettingsDocument> = db.collection("profile_settings");
 
     console.log("updateProfileImageAction: Mencoba menyimpan URI gambar profil ke database.");
     await profileSettingsCollection.updateOne(
-      {}, 
+      {},
       { $set: { profileImageUri: validatedDataUri } },
-      { upsert: true } 
+      { upsert: true }
     );
     console.log("updateProfileImageAction: URI gambar profil berhasil disimpan ke database.");
-    
-    revalidatePath('/'); 
-    revalidatePath('/admin/profile'); 
+
+    revalidatePath('/');
+    revalidatePath('/admin/profile');
     console.log("updateProfileImageAction: Path direvalidasi. Proses selesai.");
     return { success: true };
 
@@ -134,7 +141,8 @@ export async function addSkillAction(
 
     const client: MongoClient = await clientPromise;
     const db = client.db(); // Menggunakan database default (misal: portofolioDB)
-    const skillsCollection: Collection<Document> = db.collection("skills"); // Koleksi 'skills' di dalam portofolioDB
+    // Koleksi 'skills' akan berada di dalam database default tersebut
+    const skillsCollection: Collection<Document> = db.collection("skills");
 
     console.log(`addSkillAction: Mencari skill eksisting dengan nama "${validatedName}".`);
     const existingSkill = await skillsCollection.findOne({ name: { $regex: `^${validatedName}$`, $options: 'i' } });
@@ -151,12 +159,12 @@ export async function addSkillAction(
       console.log(`addSkillAction: Skill "${validatedName}" berhasil ditambahkan dengan ID: ${result.insertedId}.`);
       revalidatePath("/");
       revalidatePath("/admin/profile");
-      return { 
-        success: true, 
-        newSkill: { 
-          _id: result.insertedId.toString(), 
-          name: validatedName 
-        } 
+      return {
+        success: true,
+        newSkill: {
+          _id: result.insertedId.toString(),
+          name: validatedName
+        }
       };
     } else {
       console.error("addSkillAction: Gagal menyimpan keahlian ke database (tidak ada insertedId).");
@@ -188,9 +196,10 @@ export async function deleteSkillAction(
   try {
     const client: MongoClient = await clientPromise;
     const db = client.db(); // Menggunakan database default (misal: portofolioDB)
-    const skillsCollection: Collection<Document> = db.collection("skills"); // Koleksi 'skills' di dalam portofolioDB
-    
-    const { ObjectId } = require('mongodb'); 
+    // Koleksi 'skills' akan berada di dalam database default tersebut
+    const skillsCollection: Collection<Document> = db.collection("skills");
+
+    const { ObjectId } = require('mongodb');
     if (!ObjectId.isValid(skillId)) {
         console.error(`deleteSkillAction: Error - Format ID keahlian tidak valid: "${skillId}".`);
         return { success: false, error: "Format ID keahlian tidak valid." };
@@ -215,8 +224,8 @@ export async function deleteSkillAction(
 
 export async function updateCVAction(
   formData: FormData
-): Promise<{ success: boolean; error?: string }> {
-  console.log("updateCVAction: Mulai proses pembaruan CV.");
+): Promise<{ success: boolean; error?: string; newCvDataUri?: string }> {
+  console.log("updateCVAction: Mulai proses pembaruan CV dengan Data URI.");
   try {
     // Verifikasi sesi admin
     const tokenCookie = cookies().get(ADMIN_AUTH_COOKIE_NAME);
@@ -234,65 +243,51 @@ export async function updateCVAction(
     }
     console.log(`updateCVAction: File CV diterima: ${cvFile.name}, Tipe: ${cvFile.type}, Ukuran: ${cvFile.size}`);
 
-    const validationResult = cvFileSchema.safeParse(cvFile);
-    if (!validationResult.success) {
-      const firstError = validationResult.error.flatten().formErrors[0];
-      console.error("updateCVAction: Error validasi file CV -", firstError);
+    // Validasi file sebelum konversi ke Data URI
+    const fileValidationResult = cvFileSchema.safeParse(cvFile);
+    if (!fileValidationResult.success) {
+      const firstError = fileValidationResult.error.flatten().formErrors[0];
+      console.error("updateCVAction: Error validasi file CV (sebelum Data URI) -", firstError);
       return { success: false, error: firstError || "File CV tidak valid." };
     }
-    console.log("updateCVAction: Validasi file CV berhasil.");
+    console.log("updateCVAction: Validasi file CV (sebelum Data URI) berhasil.");
 
-    const validatedFile = validationResult.data;
-    const newFilename = "Wahyu_Pratomo-cv.pdf"; 
-    const publicDir = path.join(process.cwd(), 'public');
-    const downloadDir = path.join(publicDir, 'download');
-    const cvFilePath = path.join(downloadDir, newFilename);
-    const publicCvUrl = `/download/${newFilename}`; // Path publik CV
+    // Konversi file ke Data URI
+    const bytes = await cvFile.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    const cvDataUriString = `data:${cvFile.type};base64,${buffer.toString('base64')}`;
+    console.log("updateCVAction: File CV berhasil dikonversi ke Data URI (potongan):", cvDataUriString.substring(0, 100) + "...");
 
-    console.log(`updateCVAction: Path direktori public: ${publicDir}`);
-    console.log(`updateCVAction: Path direktori download: ${downloadDir}`);
-    console.log(`updateCVAction: Path file CV tujuan: ${cvFilePath}`);
-    console.log(`updateCVAction: URL CV publik: ${publicCvUrl}`);
 
-    try {
-      console.log(`updateCVAction: Mencoba membuat direktori: ${downloadDir} jika belum ada.`);
-      await fs.mkdir(downloadDir, { recursive: true });
-      console.log(`updateCVAction: Direktori ${downloadDir} berhasil dibuat atau sudah ada.`);
-    } catch (mkdirError: any) {
-      console.error(`updateCVAction: Gagal membuat direktori ${downloadDir}:`, mkdirError);
-      return { success: false, error: `Gagal menyiapkan direktori penyimpanan CV: ${mkdirError.message}` };
+    // Validasi Data URI yang dihasilkan
+    const dataUriValidationResult = cvDataUriSchema.safeParse(cvDataUriString);
+    if (!dataUriValidationResult.success) {
+      const firstError = dataUriValidationResult.error.flatten().formErrors[0];
+      console.error("updateCVAction: Error validasi Data URI CV -", firstError);
+      return { success: false, error: firstError || "Data URI CV yang dihasilkan tidak valid." };
     }
+    const validatedCvDataUri = dataUriValidationResult.data;
+    console.log("updateCVAction: Validasi Data URI CV berhasil.");
 
-    try {
-      console.log(`updateCVAction: Mencoba menulis file ke: ${cvFilePath}`);
-      const bytes = await validatedFile.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-      await fs.writeFile(cvFilePath, buffer);
-      console.log(`updateCVAction: File CV berhasil ditulis ke ${cvFilePath}.`);
-    } catch (writeFileError: any) {
-      console.error(`updateCVAction: Gagal menulis file CV ke ${cvFilePath}:`, writeFileError);
-      // Pertimbangkan untuk tidak melanjutkan jika file gagal ditulis, tergantung kebutuhan
-      // Jika URL tetap disimpan ke DB meski file gagal ditulis, bisa jadi ada CV link yang rusak
-      return { success: false, error: `Gagal menyimpan file CV secara fisik: ${writeFileError.message}` };
-    }
 
-    // Simpan URL publik CV ke database
+    // Simpan Data URI CV ke database
     const client: MongoClient = await clientPromise;
     const db = client.db(); // Menggunakan database default (misal: portofolioDB)
-    const profileSettingsCollection: Collection<ProfileSettingsDocument> = db.collection("profile_settings"); // Koleksi 'profile_settings' di dalam portofolioDB
+    // Koleksi 'profile_settings' akan berada di dalam database default tersebut
+    const profileSettingsCollection: Collection<ProfileSettingsDocument> = db.collection("profile_settings");
 
-    console.log("updateCVAction: Mencoba menyimpan URL CV ke database.");
+    console.log("updateCVAction: Mencoba menyimpan Data URI CV ke database.");
     await profileSettingsCollection.updateOne(
-      {}, 
-      { $set: { cvUrl: publicCvUrl } },
-      { upsert: true } 
+      {},
+      { $set: { cvDataUri: validatedCvDataUri } }, // Simpan Data URI
+      { upsert: true }
     );
-    console.log("updateCVAction: URL CV berhasil disimpan ke database.");
+    console.log("updateCVAction: Data URI CV berhasil disimpan ke database.");
 
-    revalidatePath('/'); 
-    revalidatePath('/admin/profile'); 
+    revalidatePath('/');
+    revalidatePath('/admin/profile');
     console.log("updateCVAction: Path berhasil direvalidasi. Proses pembaruan CV selesai.");
-    return { success: true };
+    return { success: true, newCvDataUri: validatedCvDataUri };
 
   } catch (error: any) { // Tangkap semua jenis error di blok utama
     console.error("updateCVAction: Terjadi kesalahan umum pada server saat memperbarui CV:", error);
@@ -310,7 +305,7 @@ export async function updateAdminCredentialsAction(
      return { success: false, error: "Sesi tidak ditemukan. Silakan login kembali." };
    }
    console.log("updateAdminCredentialsAction: Sesi admin terverifikasi.");
-  
+
   try {
     const validationResult = adminCredentialsSchema.safeParse(data);
     if (!validationResult.success) {
@@ -324,10 +319,11 @@ export async function updateAdminCredentialsAction(
 
     const client: MongoClient = await clientPromise;
     const db = client.db(); // Menggunakan database default (misal: portofolioDB)
-    const adminUsersCollection: Collection<AdminUserDocument> = db.collection("admin_users"); // Koleksi 'admin_users' di dalam portofolioDB
-    
+    // Koleksi 'admin_users' akan berada di dalam database default tersebut
+    const adminUsersCollection: Collection<AdminUserDocument> = db.collection("admin_users");
+
     console.log("updateAdminCredentialsAction: Mencari pengguna admin.");
-    const adminUser = await adminUsersCollection.findOne({}); 
+    const adminUser = await adminUsersCollection.findOne({});
 
     if (!adminUser || !adminUser.hashedPassword) {
       console.error("updateAdminCredentialsAction: Error - Pengguna admin tidak ditemukan atau konfigurasi salah (tidak ada hashedPassword).");
@@ -359,16 +355,16 @@ export async function updateAdminCredentialsAction(
 
     console.log("updateAdminCredentialsAction: Melakukan update kredensial di database.");
     await adminUsersCollection.updateOne(
-      { _id: adminUser._id }, 
+      { _id: adminUser._id },
       { $set: updateData }
     );
     console.log("updateAdminCredentialsAction: Kredensial berhasil diupdate di database.");
 
     cookies().delete(ADMIN_AUTH_COOKIE_NAME);
     console.log("updateAdminCredentialsAction: Cookie sesi admin dihapus (logout).");
-    
+
     revalidatePath("/admin/profile");
-    revalidatePath("/login"); 
+    revalidatePath("/login");
     console.log("updateAdminCredentialsAction: Path direvalidasi. Proses selesai.");
     return { success: true };
 
@@ -382,8 +378,8 @@ export async function logoutAction(): Promise<{ success: boolean }> {
   console.log("logoutAction: Mulai proses logout.");
   cookies().delete(ADMIN_AUTH_COOKIE_NAME);
   revalidatePath("/login");
-  revalidatePath("/admin/profile"); 
-  revalidatePath("/"); 
+  revalidatePath("/admin/profile");
+  revalidatePath("/");
   console.log("logoutAction: Cookie sesi admin dihapus dan path direvalidasi. Logout berhasil.");
   return { success: true };
 }
@@ -391,8 +387,8 @@ export async function logoutAction(): Promise<{ success: boolean }> {
 // Interface untuk data awal yang dibutuhkan halaman profil admin
 export interface AdminProfileInitialData {
   skills: SkillData[];
-  currentHeroImageUrl: string; 
-  currentCvUrl: string; 
+  currentHeroImageUrl: string;
+  currentCvUrl: string; // Ini akan berisi Data URI CV atau string kosong
 }
 
 // Fungsi untuk mengambil data awal untuk halaman profil admin
@@ -401,40 +397,42 @@ export async function getAdminProfileInitialData(): Promise<{ success: boolean; 
   try {
     const client: MongoClient = await clientPromise;
     const db = client.db(); // Menggunakan database default (misal: portofolioDB)
-    
-    const skillsCollection = db.collection<SkillData>("skills"); // Koleksi 'skills' di dalam portofolioDB
+
+    // Koleksi 'skills' akan berada di dalam database default tersebut
+    const skillsCollection = db.collection<SkillData>("skills");
     const skills = await skillsCollection.find({}).sort({ name: 1 }).toArray();
     const mappedSkills = skills.map(s => ({ ...s, _id: s._id.toString() }));
     console.log(`getAdminProfileInitialData: ${mappedSkills.length} skill ditemukan.`);
 
-    const profileSettingsCollection = db.collection<ProfileSettingsDocument>("profile_settings"); // Koleksi 'profile_settings' di dalam portofolioDB
-    const profileSettings = await profileSettingsCollection.findOne({}); 
+    // Koleksi 'profile_settings' akan berada di dalam database default tersebut
+    const profileSettingsCollection = db.collection<ProfileSettingsDocument>("profile_settings");
+    const profileSettings = await profileSettingsCollection.findOne({});
     console.log("getAdminProfileInitialData: Pengaturan profil diambil:", profileSettings ? "Ada data" : "Tidak ada data/kosong");
-    
-    let currentHeroImageUrl = "https://placehold.co/240x240.png?text=Profile"; 
+
+    let currentHeroImageUrl = "https://placehold.co/240x240.png?text=Profile";
     if (profileSettings && profileSettings.profileImageUri && profileSettings.profileImageUri.startsWith('data:image/')) {
       currentHeroImageUrl = profileSettings.profileImageUri;
       console.log("getAdminProfileInitialData: URI gambar profil dari DB digunakan.");
     } else {
       console.log("getAdminProfileInitialData: URI gambar profil dari DB tidak ada atau tidak valid, menggunakan placeholder.");
     }
-    
-    let currentCvUrl = "/download/Wahyu_Pratomo-cv.pdf"; // Default jika tidak ada di DB
-    if (profileSettings && profileSettings.cvUrl) {
-      currentCvUrl = profileSettings.cvUrl;
-      console.log(`getAdminProfileInitialData: URL CV dari DB digunakan: "${currentCvUrl}".`);
+
+    let currentCvDataUri = ""; // Default ke string kosong jika tidak ada CV di DB
+    if (profileSettings && profileSettings.cvDataUri && profileSettings.cvDataUri.startsWith('data:application/pdf;base64,')) {
+      currentCvDataUri = profileSettings.cvDataUri;
+      console.log(`getAdminProfileInitialData: Data URI CV dari DB digunakan.`);
     } else {
-      console.log("getAdminProfileInitialData: URL CV dari DB tidak ada, menggunakan default.");
+      console.log("getAdminProfileInitialData: Data URI CV dari DB tidak ada atau tidak valid, menggunakan string kosong.");
     }
-    
+
     console.log("getAdminProfileInitialData: Pengambilan data awal profil admin berhasil.");
-    return { 
-      success: true, 
-      data: { 
-        skills: mappedSkills, 
-        currentHeroImageUrl, 
-        currentCvUrl 
-      } 
+    return {
+      success: true,
+      data: {
+        skills: mappedSkills,
+        currentHeroImageUrl,
+        currentCvUrl: currentCvDataUri // Menggunakan currentCvDataUri sebagai currentCvUrl
+      }
     };
 
   } catch (error: any) {
@@ -442,6 +440,5 @@ export async function getAdminProfileInitialData(): Promise<{ success: boolean; 
     return { success: false, error: `Gagal mengambil data awal profil admin: ${error.message || 'Kesalahan tidak diketahui'}` };
   }
 }
-
 
     

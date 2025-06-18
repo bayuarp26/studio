@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { UploadCloud, FileText, CheckCircle, AlertCircle } from "lucide-react";
 import { updateCVAction } from "../actions";
 
@@ -34,13 +34,18 @@ const cvFormSchema = z.object({
 type CVFormValues = z.infer<typeof cvFormSchema>;
 
 interface UpdateCVFormProps {
-  currentCvUrl: string; 
+  currentCvUrl: string; // Ini akan berisi Data URI CV atau string kosong
 }
 
 export default function UpdateCVForm({ currentCvUrl }: UpdateCVFormProps) {
   const { toast } = useToast();
   const [fileName, setFileName] = useState<string | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
+  const [localCurrentCvUrl, setLocalCurrentCvUrl] = useState(currentCvUrl);
+
+  useEffect(() => {
+    setLocalCurrentCvUrl(currentCvUrl);
+  }, [currentCvUrl]);
 
   const form = useForm<CVFormValues>({
     resolver: zodResolver(cvFormSchema),
@@ -86,16 +91,15 @@ export default function UpdateCVForm({ currentCvUrl }: UpdateCVFormProps) {
 
     try {
       const result = await updateCVAction(formData);
-      if (result.success) {
+      if (result.success && result.newCvDataUri) {
         toast({
           title: "CV Berhasil Diperbarui",
-          description: "File CV Anda telah berhasil disimpan.",
+          description: "File CV Anda telah berhasil disimpan ke database.",
         });
         form.reset();
         setFileName(null);
         setFileError(null);
-        // Update current CV link displayed (optional, for immediate feedback)
-        // This might require a more complex state management or prop drilling
+        setLocalCurrentCvUrl(result.newCvDataUri); // Update local state with new Data URI
       } else {
         toast({
           variant: "destructive",
@@ -170,12 +174,24 @@ export default function UpdateCVForm({ currentCvUrl }: UpdateCVFormProps) {
         <Button type="submit" className="w-full" disabled={form.formState.isSubmitting || !form.getValues("cvFile") || !!fileError}>
           {form.formState.isSubmitting ? "Menyimpan..." : "Simpan CV Baru"}
         </Button>
-         {currentCvUrl && (
+         {localCurrentCvUrl && localCurrentCvUrl.startsWith('data:application/pdf;base64,') ? (
           <p className="text-sm text-muted-foreground mt-4 text-center">
-            CV saat ini: <a href={currentCvUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{currentCvUrl.split('/').pop()}</a>
+            CV saat ini: <a 
+                          href={localCurrentCvUrl} 
+                          download="Wahyu_Pratomo-cv.pdf"
+                          className="text-primary hover:underline"
+                        >
+                          Unduh CV (tersimpan di database)
+                        </a>
+          </p>
+        ) : (
+           <p className="text-sm text-muted-foreground mt-4 text-center">
+            Belum ada CV yang diunggah ke database.
           </p>
         )}
       </form>
     </Form>
   );
 }
+
+    
