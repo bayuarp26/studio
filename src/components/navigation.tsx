@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { Menu } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react'; // Ditambahkan useEffect, useRef
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
@@ -19,17 +19,16 @@ interface NavigationProps {
   profileName: string;
 }
 
-const NAV_VIEWPORT_OFFSET = 80; // Perkiraan tinggi navbar dalam piksel (md:h-20 -> 80px)
+const NAV_VIEWPORT_OFFSET = 80; // Tinggi navbar dalam piksel (md:h-20 -> 80px)
 
 export default function Navigation({ activeSection, navLinks, profileName }: NavigationProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isHeroNameVisible, setIsHeroNameVisible] = useState(true);
+  const [isHeroNameVisible, setIsHeroNameVisible] = useState(true); // Default true, asumsi hero name terlihat saat awal
   const initials = profileName.split(' ').map(n => n[0]).join('').toUpperCase();
 
   useEffect(() => {
     const heroNameElement = document.getElementById('hero-main-name');
     if (!heroNameElement) {
-      // console.warn("Element 'hero-main-name' tidak ditemukan untuk IntersectionObserver.");
       return;
     }
 
@@ -38,8 +37,8 @@ export default function Navigation({ activeSection, navLinks, profileName }: Nav
         setIsHeroNameVisible(entry.isIntersecting);
       },
       {
-        rootMargin: `-${NAV_VIEWPORT_OFFSET}px 0px 0px 0px`, // Memicu sedikit di atas bagian bawah navbar
-        threshold: 0.1, // Minimal 10% dari elemen 'hero-main-name' harus terlihat
+        rootMargin: `-${NAV_VIEWPORT_OFFSET - 1}px 0px 0px 0px`, // Trigger tepat saat bagian atas hero name menyentuh bawah navbar
+        threshold: 0, // Segera trigger saat persentuhan terjadi
       }
     );
 
@@ -56,7 +55,8 @@ export default function Navigation({ activeSection, navLinks, profileName }: Nav
     e.preventDefault();
     const element = document.getElementById(sectionId);
     if (element) {
-        const yOffset = -NAV_VIEWPORT_OFFSET + 20; // Sesuaikan offset agar tidak tertutup navbar
+        // Offset sedikit kurang dari tinggi navbar agar bagian atas section terlihat pas di bawah navbar
+        const yOffset = -NAV_VIEWPORT_OFFSET + 1; 
         const y = element.getBoundingClientRect().top + window.scrollY + yOffset;
         window.scrollTo({ top: y, behavior: 'smooth' });
     }
@@ -69,26 +69,27 @@ export default function Navigation({ activeSection, navLinks, profileName }: Nav
         <Link
           href="#hero"
           onClick={(e) => handleLinkClick(e, "hero")}
-          className="relative text-xl font-bold text-primary hover:text-primary/80 transition-colors flex items-center justify-center"
-          style={{ minWidth: '3rem' }} // Memberikan ruang minimum, bisa disesuaikan
+          className="text-xl font-bold text-primary hover:text-primary/80 transition-colors flex items-center"
         >
-          <div className="relative h-6 overflow-hidden"> {/* Sesuaikan h-6 jika perlu, misal text-xl -> h-7 */}
+          <div className="relative h-7 flex items-center overflow-hidden"> {/* Sesuaikan tinggi jika font lebih besar */}
+            {/* Tampilkan Inisial (WP) jika nama hero terlihat */}
             <span
               className={cn(
-                "absolute inset-0 flex items-center justify-center transition-all duration-300 ease-in-out whitespace-nowrap",
+                "absolute inset-x-0 flex items-center justify-start transition-all duration-300 ease-in-out whitespace-nowrap",
                 isHeroNameVisible
-                  ? "opacity-100 transform-none"
-                  : "opacity-0 -translate-y-full" 
+                  ? "opacity-100 translate-y-0"
+                  : "opacity-0 -translate-y-full"
               )}
               aria-hidden={!isHeroNameVisible}
             >
               {initials}
             </span>
+            {/* Tampilkan Nama Lengkap jika nama hero TIDAK terlihat (sudah di-scroll) */}
             <span
               className={cn(
-                "absolute inset-0 flex items-center justify-center transition-all duration-300 ease-in-out whitespace-nowrap",
+                "absolute inset-x-0 flex items-center justify-start transition-all duration-300 ease-in-out whitespace-nowrap",
                 !isHeroNameVisible
-                  ? "opacity-100 transform-none"
+                  ? "opacity-100 translate-y-0"
                   : "opacity-0 translate-y-full"
               )}
               aria-hidden={isHeroNameVisible}

@@ -27,9 +27,6 @@ const NAV_HEIGHT_OFFSET = 80; // Sesuaikan dengan tinggi navbar (md:h-20 -> 80px
 
 export default function PortfolioContent({ portfolioData }: { portfolioData: PortfolioDataType }) {
   const [activeSection, setActiveSection] = useState("hero");
-  // sectionRefs tidak lagi dibutuhkan secara eksplisit di sini karena handleScroll menggunakan getElementById
-  // const sectionRefs = useRef<{[key: string]: HTMLElement | null}>({}); 
-
   const isMobile = useIsMobile();
   const [isDeviceAlertOpen, setIsDeviceAlertOpen] = useState(false);
   const [deviceAlertSessionDismissed, setDeviceAlertSessionDismissed] = useState(false);
@@ -54,9 +51,8 @@ export default function PortfolioContent({ portfolioData }: { portfolioData: Por
 
 
   const handleScroll = useCallback(() => {
-    // Offset sedikit lebih besar dari tinggi navbar untuk memastikan section benar-benar "di bawah" nav
-    const scrollPositionWithOffset = window.scrollY + NAV_HEIGHT_OFFSET + 20; 
-    let currentSectionId = "hero"; // Default ke hero
+    const scrollPositionWithOffset = window.scrollY + NAV_HEIGHT_OFFSET + 1; // +1px agar lebih akurat saat section pas di bawah nav
+    let currentSectionId = "hero"; 
 
     for (const sectionId of allSectionIds) {
       const element = document.getElementById(sectionId);
@@ -64,35 +60,27 @@ export default function PortfolioContent({ portfolioData }: { portfolioData: Por
         const elementTop = element.offsetTop;
         const elementBottom = elementTop + element.offsetHeight;
 
-        // Jika bagian atas elemen sudah lewat atau sama dengan posisi scroll
         if (elementTop <= scrollPositionWithOffset) {
-          // Jika bagian bawah elemen masih di bawah posisi scroll (artinya elemen sedang terlihat)
           if (elementBottom > scrollPositionWithOffset) {
             currentSectionId = sectionId;
-            break; // Keluar loop karena section aktif sudah ditemukan
+            break; 
           } else {
-            // Jika sudah scroll melewati elemen ini, maka section ini adalah yang terakhir dilewati
             currentSectionId = sectionId; 
           }
         } else {
-          // Jika elemen pertama (hero) belum tercapai, jangan ubah dari default "hero"
-          // Jika elemen lain belum tercapai, berarti section aktif adalah yang sebelumnya
           break;
         }
       }
     }
-     // Khusus untuk kasus jika sudah scroll sampai paling bawah halaman
-    if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 50) { // toleransi 50px
-        currentSectionId = allSectionIds[allSectionIds.length - 1]; // Set ke section terakhir
+    // Penanganan khusus untuk kasus scroll di paling bawah halaman
+    if ((window.innerHeight + Math.ceil(window.scrollY)) >= document.body.offsetHeight - 2) { // Toleransi kecil
+        currentSectionId = allSectionIds[allSectionIds.length - 1]; 
     }
-
 
     setActiveSection(currentSectionId);
   }, [allSectionIds]);
 
   useEffect(() => {
-    // Tidak perlu lagi mengisi sectionRefs di sini
-    
     handleScroll(); 
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);

@@ -34,7 +34,7 @@ export default function HeroSection({ id, name, title, tagline, imageUrl, imageH
 
   return (
     <section
-      id={id}
+      id={id} // ID section utama
       className="min-h-[calc(100vh-4rem)] md:min-h-[calc(100vh-5rem)] flex items-center justify-center py-16 px-4 sm:px-6 lg:px-8 text-center bg-[#09121f]"
     >
       <div className="container mx-auto max-w-screen-lg flex flex-col md:flex-row items-center gap-8 md:gap-12">
@@ -50,7 +50,7 @@ export default function HeroSection({ id, name, title, tagline, imageUrl, imageH
           />
         </div>
         <div className="md:order-1 md:text-left text-center">
-          {/* Ditambahkan ID "hero-main-name" di sini */}
+          {/* ID ini digunakan oleh IntersectionObserver di Navigation.tsx */}
           <h1 id="hero-main-name" className="text-4xl sm:text-5xl md:text-6xl font-bold mb-3 text-primary">{name}</h1>
           <p className="text-lg sm:text-xl md:text-2xl text-neutral-200/90 mb-4">{title}</p>
           <p className="text-md sm:text-lg text-neutral-300/75 max-w-xl mx-auto md:mx-0 mb-8">{tagline}</p>
