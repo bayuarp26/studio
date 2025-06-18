@@ -14,14 +14,14 @@ export async function deleteProjectAction(
 
   try {
     const client: MongoClient = await clientPromise;
-    const db = client.db(); // Menggunakan database yang dikonfigurasi
+    const db = client.db(); 
     const projectsCollection: Collection<Document> = db.collection("projects");
 
     const result = await projectsCollection.deleteOne({ _id: new ObjectId(projectId) });
 
     if (result.deletedCount === 1) {
-      revalidatePath("/"); // Revalidasi halaman utama
-      revalidatePath("/admin/projects"); // Revalidasi halaman daftar proyek admin
+      revalidatePath("/"); 
+      revalidatePath("/admin/projects"); 
       return { success: true };
     } else {
       return { success: false, error: "Proyek tidak ditemukan atau gagal dihapus." };
@@ -30,10 +30,64 @@ export async function deleteProjectAction(
     console.error("Error in deleteProjectAction:", error);
     let errorMessage = "Terjadi kesalahan pada server saat menghapus proyek.";
     if (error instanceof Error) {
-        // Potentially log more specific error details or handle different error types
+        
         errorMessage = error.message.includes("Argument passed in must be a single String of 12 bytes or a string of 24 hex characters")
           ? "Format ID proyek tidak valid."
           : error.message;
+    }
+    return { success: false, error: errorMessage };
+  }
+}
+
+// Interface for the data structure the admin page component expects
+export interface ProjectDataForAdmin {
+  _id: string;
+  title: string;
+  imageUrl: string;
+  imageHint: string;
+  description: string;
+  details: string[];
+  tags: string[];
+  createdAt?: Date;
+}
+
+// Interface for the document structure in MongoDB
+interface ProjectDocumentFromDB extends Document {
+  _id: ObjectId;
+  title: string;
+  imageUrl: string;
+  imageHint: string;
+  description: string;
+  details: string[];
+  tags: string[];
+  createdAt: Date; 
+}
+
+export async function getAdminProjectsAction(): Promise<{ success: boolean; projects?: ProjectDataForAdmin[]; error?: string }> {
+  try {
+    const client: MongoClient = await clientPromise;
+    const db = client.db();
+    const projectsCollection = db.collection<ProjectDocumentFromDB>("projects");
+
+    const projectsFromDB = await projectsCollection.find({}).sort({ createdAt: -1 }).toArray();
+
+    const projects: ProjectDataForAdmin[] = projectsFromDB.map(p => ({
+      _id: p._id.toString(),
+      title: p.title,
+      imageUrl: p.imageUrl,
+      imageHint: p.imageHint,
+      description: p.description,
+      details: p.details,
+      tags: p.tags,
+      createdAt: p.createdAt, // This should be a Date object
+    }));
+
+    return { success: true, projects };
+  } catch (error) {
+    console.error("Error in getAdminProjectsAction:", error);
+    let errorMessage = "Terjadi kesalahan pada server saat mengambil proyek.";
+    if (error instanceof Error) {
+        errorMessage = error.message;
     }
     return { success: false, error: errorMessage };
   }
