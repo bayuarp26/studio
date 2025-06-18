@@ -11,7 +11,7 @@ interface ProjectDocument {
   description: string;
   details: string[];
   tags: string[];
-  createdAt: Date; // Tambahkan createdAt jika belum ada
+  createdAt: Date; 
 }
 
 interface SkillDocument {
@@ -27,7 +27,7 @@ export interface ProjectData {
   description: string;
   details: string[];
   tags: string[];
-  createdAt?: Date; // Jadikan opsional jika beberapa dokumen mungkin tidak memilikinya
+  createdAt?: Date; 
 }
 
 export interface SkillData {
@@ -39,7 +39,7 @@ export interface ProfileDataType {
     name: string;
     title: string;
     heroTagline: string;
-    heroImageUrl: string; // Akan menjadi path, e.g., "/images/profile.png"
+    heroImageUrl: string; 
     heroImageHint: string;
     socialLinks: {
       github: string;
@@ -47,7 +47,7 @@ export interface ProfileDataType {
     };
     cvUrl: string;
     about: {
-      imageUrl: string; // Akan menjadi path, e.g., "/images/profile.png"
+      imageUrl: string; 
       imageHint: string;
       paragraphs: string[];
       education: { institution: string; detail: string }[];
@@ -64,12 +64,10 @@ async function getProjects(): Promise<ProjectData[]> {
     const client: MongoClient = await clientPromise;
     const db = client.db();
     const projectsCollection = db.collection<ProjectDocument>("projects");
-    // Urutkan berdasarkan createdAt descending, yang terbaru dulu
     const projects = await projectsCollection.find({}).sort({ createdAt: -1 }).toArray();
     return projects.map(p => ({
       ...p,
       _id: p._id.toString(),
-      // Pastikan createdAt juga di-map jika ada
       createdAt: p.createdAt,
     }));
   } catch (e) {
@@ -100,7 +98,9 @@ export default async function PortfolioPage() {
     name: "Wahyu Pratomo",
     title: "Spesialis Media Sosial | Digital Marketing Expert | Strategi dan Kinerja Pemasaran",
     heroTagline: "Membantu merek berkembang di dunia digital dengan strategi yang data-driven dan konten yang menarik.",
-    heroImageUrl: "/images/profile.png", // Path ke gambar di folder public
+    // PENTING: Pastikan file 'profile.png' ada di folder 'public/images/'
+    // Jika tidak, gambar tidak akan muncul. Buat folder 'public/images' jika belum ada.
+    heroImageUrl: "/images/profile.png", 
     heroImageHint: "professional portrait",
     socialLinks: {
       github: "https://github.com/bayuarp26/",
@@ -108,7 +108,9 @@ export default async function PortfolioPage() {
     },
     cvUrl: "/download/Wahyu_Pratomo-cv.pdf",
     about: {
-      imageUrl: "/images/profile.png", // Path ke gambar di folder public
+      // PENTING: Pastikan file 'profile.png' ada di folder 'public/images/'
+      // Jika tidak, gambar tidak akan muncul. Buat folder 'public/images' jika belum ada.
+      imageUrl: "/images/profile.png", 
       imageHint: "team collaboration",
       paragraphs: [
       "Saya adalah seorang Spesialis Media Sosial dengan fokus pada Pemasaran Digital dan Kinerja Pemasaran.",
