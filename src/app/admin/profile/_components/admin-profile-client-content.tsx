@@ -118,7 +118,7 @@ export default function AdminProfileClientContent({ initialData, serverError }: 
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <Card className="shadow-lg transition-all duration-200 ease-out hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-inner hover:brightness-95">
+        <Card className="shadow-lg transition-all duration-200 ease-out hover:shadow-inner hover:brightness-95">
           <CardHeader>
             <CardTitle className="flex items-center text-primary">
               <ImageUp className="mr-2 h-5 w-5" />
@@ -131,7 +131,7 @@ export default function AdminProfileClientContent({ initialData, serverError }: 
           </CardContent>
         </Card>
 
-        <Card className="shadow-lg transition-all duration-200 ease-out hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-inner hover:brightness-95">
+        <Card className="shadow-lg transition-all duration-200 ease-out hover:shadow-inner hover:brightness-95">
           <CardHeader>
             <CardTitle className="flex items-center text-primary">
               <UserCog className="mr-2 h-5 w-5" />
@@ -144,7 +144,7 @@ export default function AdminProfileClientContent({ initialData, serverError }: 
           </CardContent>
         </Card>
 
-        <Card className="shadow-lg transition-all duration-200 ease-out hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-inner hover:brightness-95">
+        <Card className="shadow-lg transition-all duration-200 ease-out hover:shadow-inner hover:brightness-95">
           <CardHeader>
             <CardTitle className="flex items-center text-primary">
               <FileText className="mr-2 h-5 w-5" />
@@ -157,7 +157,7 @@ export default function AdminProfileClientContent({ initialData, serverError }: 
           </CardContent>
         </Card>
 
-        <Card className="shadow-lg transition-all duration-200 ease-out hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-inner hover:brightness-95">
+        <Card className="shadow-lg transition-all duration-200 ease-out hover:shadow-inner hover:brightness-95">
           <CardHeader>
             <CardTitle className="flex items-center text-primary">
               <KeyRound className="mr-2 h-5 w-5" />

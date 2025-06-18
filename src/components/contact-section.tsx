@@ -25,7 +25,7 @@ export default function ContactSection({ id, title, email, socialLinks }: Contac
         <p className="text-lg text-muted-foreground mb-8 mt-[-1.5rem]">
           Saya selalu terbuka untuk diskusi, kolaborasi, atau sekadar menyapa. Jangan ragu untuk menghubungi!
         </p>
-        <Card className="bg-card shadow-xl border border-border transition-all duration-200 ease-out hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-inner hover:brightness-95">
+        <Card className="bg-card shadow-xl border border-border transition-all duration-200 ease-out hover:shadow-inner hover:brightness-95">
           <CardContent className="p-6 md:p-8 space-y-4">
             <a
               href={`mailto:${email}`}
