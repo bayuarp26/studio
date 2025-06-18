@@ -5,8 +5,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import clientPromise from "@/lib/mongodb";
 import type { MongoClient, Collection, Document, ObjectId } from 'mongodb';
-// import fs from 'fs/promises'; // fs is no longer needed for CV
-// import path from 'path'; // path is no longer needed for CV
+// fs dan path sudah tidak diperlukan karena CV disimpan sebagai Data URI
 import type { SkillData } from "@/app/page";
 import { cookies } from "next/headers";
 import { hashPassword, comparePassword } from "@/lib/authUtils";
@@ -46,7 +45,7 @@ const adminCredentialsSchema = z.object({
   newPassword: z.string().min(6, "Password baru minimal 6 karakter.").optional().or(z.literal('')),
 }).refine(data => data.newUsername || data.newPassword, {
     message: "Setidaknya username baru atau password baru harus diisi.",
-    path: ["newUsername"] // Path untuk error jika validasi refine gagal
+    path: ["newUsername"] 
 });
 
 // Interface untuk dokumen pengguna admin di database
@@ -289,9 +288,13 @@ export async function updateCVAction(
     console.log("updateCVAction: Path berhasil direvalidasi. Proses pembaruan CV selesai.");
     return { success: true, newCvDataUri: validatedCvDataUri };
 
-  } catch (error: any) { // Tangkap semua jenis error di blok utama
+  } catch (error: any) { 
     console.error("updateCVAction: Terjadi kesalahan umum pada server saat memperbarui CV:", error);
-    return { success: false, error: `Terjadi kesalahan pada server saat memperbarui CV: ${error.message || 'Kesalahan tidak diketahui'}` };
+    let errorMessage = "Terjadi kesalahan pada server saat memperbarui CV.";
+    if (error instanceof Error) {
+        errorMessage = error.message;
+    }
+    return { success: false, error: errorMessage };
   }
 }
 

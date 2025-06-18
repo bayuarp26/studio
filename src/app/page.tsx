@@ -143,8 +143,7 @@ export default async function PortfolioPage() {
 
   const heroPlaceholder = "https://placehold.co/240x240.png";
   const aboutPlaceholder = "https://placehold.co/320x400.png";
-  // const defaultCvUrl = "/download/Wahyu_Pratomo-cv.pdf"; // Default URL statis tidak lagi jadi fallback utama, Data URI dari DB yang diutamakan
-
+  
   const profileImageFromDB = (profileSettings.profileImageUri && profileSettings.profileImageUri.startsWith('data:image/'))
                          ? profileSettings.profileImageUri
                          : null;

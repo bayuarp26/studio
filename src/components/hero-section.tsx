@@ -16,7 +16,7 @@ interface HeroSectionProps {
   imageUrl: string;
   imageHint: string;
   socialLinks: SocialLinks;
-  cvUrl: string;
+  cvUrl: string; // cvUrl sekarang adalah Data URI dari database atau string kosong
 }
 
 export default function HeroSection({ id, name, title, tagline, imageUrl, imageHint, socialLinks, cvUrl }: HeroSectionProps) {
@@ -42,12 +42,19 @@ export default function HeroSection({ id, name, title, tagline, imageUrl, imageH
           <p className="text-lg sm:text-xl md:text-2xl text-neutral-200/90 mb-4">{title}</p> {/* Supporting text light gray */}
           <p className="text-md sm:text-lg text-neutral-300/75 max-w-xl mx-auto md:mx-0 mb-8">{tagline}</p> {/* Tagline light gray */}
           <div className="flex flex-col sm:flex-row justify-center md:justify-start items-center gap-4">
-            <Button asChild size="lg" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground">
-              <a href={cvUrl} target="_blank" rel="noopener noreferrer" download="Wahyu_Pratomo-cv.pdf"> {/* Ensure download attribute is present and href is correct */}
+            {cvUrl && cvUrl.startsWith('data:application/pdf;base64,') ? ( // Hanya tampilkan tombol jika cvUrl valid
+              <Button asChild size="lg" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground">
+                <a href={cvUrl} target="_blank" rel="noopener noreferrer" download="Wahyu_Pratomo-cv.pdf"> 
+                  <DownloadIcon className="mr-2 h-5 w-5" />
+                  Unduh CV
+                </a>
+              </Button>
+            ) : (
+              <Button size="lg" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground" disabled>
                 <DownloadIcon className="mr-2 h-5 w-5" />
-                Unduh CV
-              </a>
-            </Button>
+                CV Tidak Tersedia
+              </Button>
+            )}
             <div className="flex space-x-3 mt-4 sm:mt-0">
               <Button asChild variant="outline" size="icon" className="rounded-full border-primary text-primary hover:bg-primary hover:text-primary-foreground">
                 <a href={socialLinks.github} target="_blank" rel="noopener noreferrer" aria-label="GitHub">
@@ -66,3 +73,5 @@ export default function HeroSection({ id, name, title, tagline, imageUrl, imageH
     </section>
   );
 }
+
+    
