@@ -13,7 +13,6 @@ import { hashPassword, comparePassword } from "@/lib/authUtils";
 
 const ADMIN_AUTH_COOKIE_NAME = 'admin-auth-token';
 
-// Skema untuk validasi Data URI gambar profil
 const heroImageDataUriSchema = z.string().refine(val => val.startsWith('data:image/'), {
   message: "URL Gambar harus berupa Data URI yang valid.",
 });
@@ -43,8 +42,15 @@ interface AdminUserDocument extends Document {
   _id: ObjectId;
   username: string;
   hashedPassword?: string;
-  profileImageUri?: string; // Menyimpan Data URI gambar profil
+  // profileImageUri untuk foto profil publik telah dipindahkan ke koleksi 'profile_settings'
 }
+
+interface ProfileSettingsDocument extends Document {
+  _id?: ObjectId; // Bisa jadi kita hanya punya 1 dokumen, jadi _id bisa fixed atau tidak dipakai
+  profileImageUri?: string;
+  // Tambahkan field lain untuk pengaturan profil di sini jika perlu
+}
+
 
 export async function updateProfileImageAction(
   imageDataUri: string
@@ -63,18 +69,14 @@ export async function updateProfileImageAction(
     
     const client: MongoClient = await clientPromise;
     const db = client.db();
-    const adminUsersCollection: Collection<AdminUserDocument> = db.collection("admin_users");
+    const profileSettingsCollection: Collection<ProfileSettingsDocument> = db.collection("profile_settings");
 
-    // Asumsikan ada satu dokumen admin, atau Anda memiliki cara untuk mengidentifikasinya
-    // Jika tidak ada, mungkin perlu dibuat atau ada kesalahan logika
-    const adminUser = await adminUsersCollection.findOne({}); 
-    if (!adminUser) {
-      return { success: false, error: "Pengguna admin tidak ditemukan." };
-    }
-
-    await adminUsersCollection.updateOne(
-      { _id: adminUser._id },
-      { $set: { profileImageUri: validatedDataUri } }
+    // Update atau buat (upsert) satu dokumen untuk menyimpan foto profil
+    // Kita bisa menggunakan ID tetap atau filter kosong jika hanya ada satu dokumen
+    await profileSettingsCollection.updateOne(
+      {}, // Filter kosong untuk mencocokkan dokumen tunggal, atau gunakan ID spesifik
+      { $set: { profileImageUri: validatedDataUri } },
+      { upsert: true } // Buat dokumen jika belum ada
     );
     
     revalidatePath('/'); 
@@ -198,7 +200,6 @@ export async function updateCVAction(
   } catch (error)
 {
     console.error("Error in updateCVAction:", error);
-    // Pastikan untuk tidak mencoba menulis ke file sistem di sini jika error
     return { success: false, error: "Terjadi kesalahan pada server saat memperbarui CV." };
   }
 }
@@ -273,7 +274,7 @@ export async function logoutAction(): Promise<{ success: boolean }> {
 
 export interface AdminProfileInitialData {
   skills: SkillData[];
-  currentHeroImageUrl: string; // Akan berisi Data URI atau URL placeholder
+  currentHeroImageUrl: string; 
   currentCvUrl: string;
 }
 
@@ -286,25 +287,18 @@ export async function getAdminProfileInitialData(): Promise<{ success: boolean; 
     const skills = await skillsCollection.find({}).sort({ name: 1 }).toArray();
     const mappedSkills = skills.map(s => ({ ...s, _id: s._id.toString() }));
 
-    const adminUsersCollection = db.collection<AdminUserDocument>("admin_users");
-    const adminUser = await adminUsersCollection.findOne({});
+    // Mengambil foto profil dari koleksi 'profile_settings'
+    const profileSettingsCollection = db.collection<ProfileSettingsDocument>("profile_settings");
+    const profileSettings = await profileSettingsCollection.findOne({});
     
     let currentHeroImageUrl = "https://placehold.co/240x240.png?text=Profile"; // Default placeholder
-    if (adminUser && adminUser.profileImageUri && adminUser.profileImageUri.startsWith('data:image/')) {
-      currentHeroImageUrl = adminUser.profileImageUri;
+    if (profileSettings && profileSettings.profileImageUri && profileSettings.profileImageUri.startsWith('data:image/')) {
+      currentHeroImageUrl = profileSettings.profileImageUri;
     }
-
-    const pageFilePath = path.join(process.cwd(), 'src', 'app', 'page.tsx');
-    const fileContent = await fs.readFile(pageFilePath, 'utf-8');
     
     let currentCvUrl = "/download/Wahyu_Pratomo-cv.pdf"; 
-    const cvRegex = /cvUrl:\s*["'](\/download\/[^"']+\.pdf)["']/; 
-    const cvMatch = fileContent.match(cvRegex);
-    if (cvMatch && cvMatch[1]) {
-      currentCvUrl = cvMatch[1];
-    } else {
-      console.warn("Could not extract cvUrl from page.tsx using regex, using default. Check hardcoded value in page.tsx.");
-    }
+    // Logika untuk mengambil CV path bisa tetap atau diubah jika CV juga disimpan di DB. Saat ini masih dari public.
+    // Untuk menyederhanakan, kita asumsikan path CV masih hardcoded atau dikelola secara statis untuk saat ini.
 
     return { 
       success: true, 
@@ -320,3 +314,5 @@ export async function getAdminProfileInitialData(): Promise<{ success: boolean; 
     return { success: false, error: "Gagal mengambil data awal profil admin." };
   }
 }
+
+    

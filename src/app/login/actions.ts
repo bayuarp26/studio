@@ -18,8 +18,7 @@ interface AdminUserDocument extends Document {
   _id: ObjectId;
   username: string;
   hashedPassword?: string;
-  password?: string; // Untuk password lama yang belum di-hash (legacy, akan dihapus)
-  profileImageUri?: string; // Field untuk menyimpan Data URI gambar profil
+  password?: string; 
 }
 
 const initialAdminUsername = "085156453246";
@@ -51,7 +50,6 @@ export async function loginAction(
             const result = await adminUsersCollection.insertOne({
               username: initialAdminUsername,
               hashedPassword: hashedPassword,
-              profileImageUri: "", // Inisialisasi profileImageUri
             } as AdminUserDocument); 
             
              const insertedId = result.insertedId;
@@ -80,7 +78,6 @@ export async function loginAction(
           { 
             $set: { 
               hashedPassword: newHashedPassword,
-              profileImageUri: adminUser.profileImageUri || "" // Pastikan profileImageUri tetap ada
             }, 
             $unset: { password: "" } 
           }
@@ -118,3 +115,5 @@ export async function loginAction(
     return { success: false, error: "Terjadi kesalahan pada server saat login." };
   }
 }
+
+    

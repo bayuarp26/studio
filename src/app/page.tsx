@@ -1,7 +1,7 @@
 
 import PortfolioContent from '@/app/portfolio-content';
 import clientPromise from '@/lib/mongodb';
-import type { MongoClient, ObjectId, Collection } from 'mongodb';
+import type { MongoClient, ObjectId, Collection, Document } from 'mongodb';
 
 interface ProjectDocument {
   _id: ObjectId;
@@ -19,12 +19,10 @@ interface SkillDocument {
   name: string;
 }
 
-// Interface untuk dokumen pengguna admin dari database
-interface AdminUserDocument {
-  _id: ObjectId;
-  username: string;
-  // Tambahkan field lain jika ada, misal nama lengkap, judul, dll.
-  profileImageUri?: string; // Menyimpan Data URI gambar profil
+// Interface untuk dokumen pengaturan profil dari database
+interface ProfileSettingsDocument {
+  _id?: ObjectId;
+  profileImageUri?: string;
 }
 
 
@@ -44,7 +42,7 @@ export interface SkillData {
   name: string;
 }
 
-export interface PortfolioDataType { // Diganti dari ProfileDataType
+export interface PortfolioDataType {
     name: string;
     title: string;
     heroTagline: string;
@@ -98,21 +96,20 @@ async function getSkills(): Promise<SkillData[]> {
   }
 }
 
-async function getAdminUserData(): Promise<Partial<AdminUserDocument>> {
+async function getProfileSettingsData(): Promise<Partial<ProfileSettingsDocument>> {
   try {
     const client: MongoClient = await clientPromise;
     const db = client.db();
-    const adminUsersCollection: Collection<AdminUserDocument> = db.collection("admin_users");
-    const adminUser = await adminUsersCollection.findOne({}); // Ambil dokumen admin pertama
-    if (adminUser) {
+    const profileSettingsCollection: Collection<ProfileSettingsDocument> = db.collection("profile_settings");
+    const settings = await profileSettingsCollection.findOne({}); // Ambil dokumen pengaturan tunggal
+    if (settings) {
       return {
-        username: adminUser.username,
-        profileImageUri: adminUser.profileImageUri,
+        profileImageUri: settings.profileImageUri,
       };
     }
     return {};
   } catch (e) {
-    console.error("Failed to fetch admin user data:", e);
+    console.error("Failed to fetch profile settings data:", e);
     return {};
   }
 }
@@ -121,29 +118,29 @@ async function getAdminUserData(): Promise<Partial<AdminUserDocument>> {
 export default async function PortfolioPage() {
   const fetchedProjects = await getProjects();
   const fetchedSkills = await getSkills();
-  const adminUserData = await getAdminUserData();
+  const profileSettings = await getProfileSettingsData();
 
-  const heroPlaceholder = "https://placehold.co/240x240.png";
-  const aboutPlaceholder = "https://placehold.co/320x400.png";
+  const heroPlaceholder = "https://placehold.co/240x240.png?text=Profile";
+  const aboutPlaceholder = "https://placehold.co/320x400.png?text=About";
 
   const portfolioData: PortfolioDataType = {
-    name: "Wahyu Pratomo", // Bisa juga diambil dari adminUserData.username atau field lain jika ada
+    name: "Wahyu Pratomo", 
     title: "Spesialis Media Sosial | Digital Marketing Expert | Strategi dan Kinerja Pemasaran",
     heroTagline: "Membantu merek berkembang di dunia digital dengan strategi yang data-driven dan konten yang menarik.",
-    heroImageUrl: (adminUserData.profileImageUri && adminUserData.profileImageUri.startsWith('data:image/')) 
-                    ? adminUserData.profileImageUri 
+    heroImageUrl: (profileSettings.profileImageUri && profileSettings.profileImageUri.startsWith('data:image/')) 
+                    ? profileSettings.profileImageUri 
                     : heroPlaceholder,
-    heroImageHint: "profile portrait", // Tetap statis atau bisa ditambahkan ke DB
+    heroImageHint: "profile portrait",
     socialLinks: {
       github: "https://github.com/bayuarp26/",
       linkedin: "https://linkedin.com/in/wahyupratomo26",
     },
-    cvUrl: "/download/Wahyu_Pratomo-cv.pdf", // Tetap statis
+    cvUrl: "/download/Wahyu_Pratomo-cv.pdf", 
     about: {
-      imageUrl: (adminUserData.profileImageUri && adminUserData.profileImageUri.startsWith('data:image/')) 
-                  ? adminUserData.profileImageUri // Menggunakan gambar profil yang sama untuk bagian about
+      imageUrl: (profileSettings.profileImageUri && profileSettings.profileImageUri.startsWith('data:image/')) 
+                  ? profileSettings.profileImageUri 
                   : aboutPlaceholder, 
-      imageHint: "professional activity", // Tetap statis atau bisa ditambahkan ke DB
+      imageHint: "professional activity", 
       paragraphs: [
       "Saya adalah seorang Spesialis Media Sosial dengan fokus pada Pemasaran Digital dan Kinerja Pemasaran.",
       "Memiliki pengalaman selama 9 bulan di industri ini, Saya suka bekerja dengan merek yang memiliki misi dan berkomitmen untuk merepresentasikan produk secara menarik di media sosial."
@@ -161,3 +158,5 @@ export default async function PortfolioPage() {
 
   return <PortfolioContent portfolioData={portfolioData} />;
 }
+
+    
