@@ -61,26 +61,20 @@ export async function updateProfileImageAction(
 
     const validatedDataUri = validationResult.data.heroImageUrl;
     
-    // Ekstrak tipe gambar dan data base64
     const matches = validatedDataUri.match(/^data:(image\/(.+?));base64,(.*)$/);
     if (!matches || matches.length !== 4) {
       return { success: false, error: "Format Data URI gambar tidak valid." };
     }
-    // const imageType = matches[1]; // e.g., "image/png"
-    // const imageExtension = matches[2]; // e.g., "png"
     const base64Data = matches[3];
     const imageBuffer = Buffer.from(base64Data, 'base64');
 
     const publicDir = path.join(process.cwd(), 'public');
     const imagesDir = path.join(publicDir, 'images');
-    const imagePath = path.join(imagesDir, 'profile.png'); // Nama file tetap profile.png
+    const imagePath = path.join(imagesDir, 'profile.png'); 
 
-    await fs.mkdir(imagesDir, { recursive: true }); // Buat folder images jika belum ada
+    await fs.mkdir(imagesDir, { recursive: true }); 
     await fs.writeFile(imagePath, imageBuffer);
-
-    // src/app/page.tsx sekarang sudah merujuk ke /images/profile.png,
-    // jadi kita tidak perlu mengubah file page.tsx lagi di sini.
-    // Cukup revalidate path untuk memastikan Next.js menyajikan gambar baru.
+    
     revalidatePath('/'); 
     revalidatePath('/admin/profile'); 
     return { success: true };
@@ -195,19 +189,20 @@ export async function updateCVAction(
     const buffer = Buffer.from(bytes);
     await fs.writeFile(cvFilePath, buffer);
 
-    // Update cvUrl di src/app/page.tsx (mempertahankan mekanisme ini untuk CV)
-    const pageFilePath = path.join(process.cwd(), 'src', 'app', 'page.tsx');
-    let fileContent = await fs.readFile(pageFilePath, 'utf-8');
-    
-    const cvUrlRegex = /(cvUrl:\s*["'])(.*?)(["'])/;
-    const newCvUrl = `/download/${newFilename}`;
-    
-    if (cvUrlRegex.test(fileContent)) {
-        fileContent = fileContent.replace(cvUrlRegex, `$1${newCvUrl}$3`);
-    } else {
-        console.warn("Peringatan: Pola cvUrl tidak ditemukan di src/app/page.tsx. URL CV mungkin tidak diperbarui di sana.");
-    }
-    await fs.writeFile(pageFilePath, fileContent, 'utf-8');
+    // REMOVED: Attempt to modify src/app/page.tsx at runtime.
+    // This was a likely cause of Internal Server Errors in deployed environments.
+    // The cvUrl in page.tsx is now static. If dynamic CV URLs are needed,
+    // consider storing the path in a database.
+    // const pageFilePath = path.join(process.cwd(), 'src', 'app', 'page.tsx');
+    // let fileContent = await fs.readFile(pageFilePath, 'utf-8');
+    // const cvUrlRegex = /(cvUrl:\s*["'])(.*?)(["'])/;
+    // const newCvUrlPath = `/download/${newFilename}`;
+    // if (cvUrlRegex.test(fileContent)) {
+    //     fileContent = fileContent.replace(cvUrlRegex, `$1${newCvUrlPath}$3`);
+    // } else {
+    //     console.warn("Warning: cvUrl pattern not found in src/app/page.tsx. CV URL might not be updated there.");
+    // }
+    // await fs.writeFile(pageFilePath, fileContent, 'utf-8');
 
     revalidatePath('/'); 
     revalidatePath('/admin/profile'); 
@@ -271,6 +266,7 @@ export async function updateAdminCredentialsAction(
     cookies().delete(ADMIN_AUTH_COOKIE_NAME);
     
     revalidatePath("/admin/profile");
+    revalidatePath("/login"); // Revalidate login in case username changed for any immediate checks
     return { success: true };
 
   } catch (error) {
@@ -281,6 +277,8 @@ export async function updateAdminCredentialsAction(
 
 export async function logoutAction(): Promise<{ success: boolean }> {
   cookies().delete(ADMIN_AUTH_COOKIE_NAME);
+  revalidatePath("/login");
+  revalidatePath("/admin/profile"); // and other admin pages if session state is checked there
   return { success: true };
 }
 
@@ -298,19 +296,20 @@ export async function getAdminProfileInitialData(): Promise<{ success: boolean; 
     const skills = await skillsCollection.find({}).sort({ name: 1 }).toArray();
     const mappedSkills = skills.map(s => ({ ...s, _id: s._id.toString() }));
 
-    const currentHeroImageUrl = "/images/profile.png"; // Path statis sekarang
+    const currentHeroImageUrl = "/images/profile.png"; 
 
-    // Baca cvUrl dari src/app/page.tsx (mempertahankan mekanisme ini untuk CV)
+    // The CV URL is now static based on page.tsx, as dynamic update of page.tsx was removed.
+    // If page.tsx's hardcoded cvUrl changes, this will reflect that after a new build/deployment.
     const pageFilePath = path.join(process.cwd(), 'src', 'app', 'page.tsx');
     const fileContent = await fs.readFile(pageFilePath, 'utf-8');
     
-    let currentCvUrl = "/download/Wahyu_Pratomo-cv.pdf"; // Default
-    const cvRegex = /cvUrl:\s*["'](.*?)["']/;
+    let currentCvUrl = "/download/Wahyu_Pratomo-cv.pdf"; // Default if not found in page.tsx
+    const cvRegex = /cvUrl:\s*["'](\/download\/[^"']+\.pdf)["']/; // More specific regex
     const cvMatch = fileContent.match(cvRegex);
     if (cvMatch && cvMatch[1]) {
       currentCvUrl = cvMatch[1];
     } else {
-      console.warn("Tidak dapat mengekstrak cvUrl dari page.tsx, menggunakan default.");
+      console.warn("Could not extract cvUrl from page.tsx using regex, using default. Check hardcoded value in page.tsx.");
     }
 
     return { 
@@ -327,3 +326,5 @@ export async function getAdminProfileInitialData(): Promise<{ success: boolean; 
     return { success: false, error: "Gagal mengambil data awal profil admin." };
   }
 }
+
+    
