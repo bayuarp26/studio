@@ -68,24 +68,20 @@ export default function UpdateAdminCredentialsForm() {
     try {
       const result = await updateAdminCredentialsAction({
         currentPassword: data.currentPassword,
-        newUsername: data.newUsername || undefined, // Kirim undefined jika kosong
-        newPassword: data.newPassword || undefined, // Kirim undefined jika kosong
+        newUsername: data.newUsername || undefined, 
+        newPassword: data.newPassword || undefined, 
       });
 
       if (result.success) {
         toast({
           title: "Kredensial Diperbarui",
-          description: "Kredensial admin berhasil diperbarui. Anda akan logout, silakan login kembali.",
+          description: "Kredensial admin berhasil diperbarui. Anda akan dilogout, silakan login kembali.",
         });
         form.reset();
-        // router.push("/login") tidak diperlukan karena logoutAction akan dipanggil dari server
-        // dan middleware akan handle redirect
-        router.refresh(); // Refresh untuk memastikan middleware/sesi diperbarui
-        // Tunggu sebentar agar toast terlihat sebelum redirect oleh middleware jika sesi dihapus
-        setTimeout(() => {
-          router.push("/login"); 
-        }, 1500);
-
+        router.refresh(); // Refresh halaman admin. Middleware akan menangani redirect ke /login.
+        // setTimeout(() => {
+        //   router.push("/login"); 
+        // }, 1500); // Dihapus untuk menghilangkan delay
       } else {
         toast({
           variant: "destructive",

@@ -8,11 +8,11 @@ import SectionContainer from '@/components/section-container';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, UserCog, Home, LogOut } from 'lucide-react'; 
+import { PlusCircle, UserCog, Home, LogOut, ListOrdered } from 'lucide-react'; // Menggunakan ListOrdered
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { logoutAction } from "../../profile/actions"; // Adjusted path
-import type { ProjectDataForAdmin as ProjectData } from "../actions"; // Adjusted path
+import { logoutAction } from "../../profile/actions"; 
+import type { ProjectDataForAdmin as ProjectData } from "../actions"; 
 import { useEffect, useState } from 'react';
 
 interface ManageProjectsClientContentProps {
@@ -26,7 +26,7 @@ export default function ManageProjectsClientContent({ initialProjects, serverErr
   const [projects, setProjects] = useState<ProjectData[]>(initialProjects);
 
   useEffect(() => {
-    setProjects(initialProjects); // Update local state if prop changes
+    setProjects(initialProjects); 
   }, [initialProjects]);
 
   useEffect(() => {
@@ -48,7 +48,7 @@ export default function ManageProjectsClientContent({ initialProjects, serverErr
         description: "Anda telah berhasil logout.",
       });
       router.push("/login");
-      router.refresh();
+      // router.refresh(); // Dihapus, router.push sudah cukup
     } else {
        toast({
         variant: "destructive",

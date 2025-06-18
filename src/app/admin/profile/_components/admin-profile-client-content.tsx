@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import SectionContainer from '@/components/section-container';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Home, ImageUp, ListChecks, FileText, UserCog, LogOut, KeyRound, PlusCircle } from 'lucide-react'; 
+import { Home, ImageUp, ListChecks, FileText, UserCog, LogOut, KeyRound, PlusCircle, ListOrdered } from 'lucide-react'; 
 import UpdateProfileImageForm from './update-profile-image-form';
 import ManageSkillsSection from './manage-skills-section';
 import UpdateCVForm from './update-cv-form'; 
@@ -28,7 +28,7 @@ export default function AdminProfileClientContent({ initialData, serverError }: 
   const [data, setData] = useState<AdminProfilePageData | null>(initialData);
 
   useEffect(() => {
-    setData(initialData); // Update state if initialData prop changes (e.g. after revalidation)
+    setData(initialData); 
   }, [initialData]);
 
   useEffect(() => {
@@ -50,7 +50,7 @@ export default function AdminProfileClientContent({ initialData, serverError }: 
         description: "Anda telah berhasil logout.",
       });
       router.push("/login");
-      router.refresh(); 
+      // router.refresh(); // Dihapus, router.push sudah cukup
     } else {
        toast({
         variant: "destructive",
@@ -60,7 +60,7 @@ export default function AdminProfileClientContent({ initialData, serverError }: 
     }
   };
 
-  if (!data && !serverError) { // Still fetching or initialData was null without server error (unlikely if server handled it)
+  if (!data && !serverError) { 
     return (
       <SectionContainer id="admin-profile-loading" className="bg-background min-h-screen pt-24 md:pt-32 flex justify-center items-center">
         <p className="text-xl text-muted-foreground">Memuat data profil admin...</p>
@@ -68,7 +68,7 @@ export default function AdminProfileClientContent({ initialData, serverError }: 
     );
   }
   
-  if (!data && serverError) { // Explicit error from server
+  if (!data && serverError) { 
      return (
       <SectionContainer id="admin-profile-error" className="bg-background min-h-screen pt-24 md:pt-32 flex flex-col justify-center items-center">
         <p className="text-xl text-destructive mb-4">Gagal memuat data profil.</p>
@@ -78,7 +78,7 @@ export default function AdminProfileClientContent({ initialData, serverError }: 
     );
   }
   
-  if (!data) { // Fallback for any other reason data is null
+  if (!data) { 
      return (
       <SectionContainer id="admin-profile-error" className="bg-background min-h-screen pt-24 md:pt-32 flex flex-col justify-center items-center">
         <p className="text-xl text-destructive mb-4">Data profil tidak tersedia.</p>
@@ -100,8 +100,8 @@ export default function AdminProfileClientContent({ initialData, serverError }: 
             </Link>
           </Button>
           <Button asChild variant="outline">
-            <Link href="/admin/projects">
-              <ListChecks className="mr-2 h-4 w-4" />
+            <Link href="/admin/projects"> {/* Menggunakan ListOrdered dari Add Project */}
+              <ListOrdered className="mr-2 h-4 w-4" /> 
               Kelola Proyek
             </Link>
           </Button>

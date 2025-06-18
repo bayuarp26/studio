@@ -159,7 +159,7 @@ export default function AddProjectPage() {
         description: "Anda telah berhasil logout.",
       });
       router.push("/login");
-      router.refresh(); 
+      // router.refresh(); // Dihapus, router.push sudah cukup
     } else {
        toast({
         variant: "destructive",

@@ -49,7 +49,7 @@ export default function LoginPage() {
           description: "Anda akan diarahkan ke halaman admin.",
         });
         router.push("/admin/profile"); // Redirect ke halaman admin profil setelah login berhasil
-        router.refresh(); // Untuk memastikan state middleware diperbarui
+        // router.refresh(); // Dihapus, router.push sudah cukup memicu middleware
       } else {
         toast({
           variant: "destructive",

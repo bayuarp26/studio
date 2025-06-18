@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import { UploadCloud, FileText, CheckCircle, AlertCircle } from "lucide-react";
 import { updateCVAction } from "../actions";
+import { downloadDataUri } from "@/lib/downloadUtils"; // Import helper
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 const ACCEPTED_CV_TYPES = ["application/pdf"];
@@ -34,7 +35,7 @@ const cvFormSchema = z.object({
 type CVFormValues = z.infer<typeof cvFormSchema>;
 
 interface UpdateCVFormProps {
-  currentCvUrl: string; // Ini akan berisi Data URI CV atau string kosong
+  currentCvUrl: string; 
 }
 
 export default function UpdateCVForm({ currentCvUrl }: UpdateCVFormProps) {
@@ -55,12 +56,11 @@ export default function UpdateCVForm({ currentCvUrl }: UpdateCVFormProps) {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>, fieldChange: (file: File | null) => void) => {
     const file = event.target.files?.[0] || null;
     if (file) {
-      // Client-side validation for immediate feedback
       if (file.size > MAX_FILE_SIZE) {
         setFileError(`Ukuran file maksimal ${MAX_FILE_SIZE / (1024*1024)}MB.`);
         setFileName(null);
         fieldChange(null);
-        form.setValue("cvFile", null as any, { shouldValidate: true }); // Trigger validation
+        form.setValue("cvFile", null as any, { shouldValidate: true }); 
         return;
       }
       if (!ACCEPTED_CV_TYPES.includes(file.type)) {
@@ -99,7 +99,7 @@ export default function UpdateCVForm({ currentCvUrl }: UpdateCVFormProps) {
         form.reset();
         setFileName(null);
         setFileError(null);
-        setLocalCurrentCvUrl(result.newCvDataUri); // Update local state with new Data URI
+        setLocalCurrentCvUrl(result.newCvDataUri); 
       } else {
         toast({
           variant: "destructive",
@@ -116,6 +116,15 @@ export default function UpdateCVForm({ currentCvUrl }: UpdateCVFormProps) {
     }
   }
 
+  const handleDownloadCurrentCv = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault(); // Mencegah navigasi default jika href adalah Data URI
+    if (localCurrentCvUrl && localCurrentCvUrl.startsWith('data:application/pdf;base64,')) {
+      downloadDataUri(localCurrentCvUrl, "Wahyu_Pratomo-cv.pdf");
+    } else {
+      alert("File CV saat ini tidak tersedia atau format tidak valid.");
+    }
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -130,7 +139,7 @@ export default function UpdateCVForm({ currentCvUrl }: UpdateCVFormProps) {
                   <Input
                     type="file"
                     accept=".pdf"
-                    className="hidden" // Hide default input
+                    className="hidden" 
                     id="cv-file-upload"
                     onChange={(e) => handleFileChange(e, onChange)}
                     {...rest}
@@ -177,9 +186,9 @@ export default function UpdateCVForm({ currentCvUrl }: UpdateCVFormProps) {
          {localCurrentCvUrl && localCurrentCvUrl.startsWith('data:application/pdf;base64,') ? (
           <p className="text-sm text-muted-foreground mt-4 text-center">
             CV saat ini: <a 
-                          href={localCurrentCvUrl} 
-                          download="Wahyu_Pratomo-cv.pdf"
-                          className="text-primary hover:underline"
+                          href={localCurrentCvUrl} // href tetap ada untuk aksesibilitas dasar
+                          onClick={handleDownloadCurrentCv} // onClick untuk download yang lebih robust
+                          className="text-primary hover:underline cursor-pointer"
                         >
                           Unduh CV (tersimpan di database)
                         </a>
@@ -193,5 +202,3 @@ export default function UpdateCVForm({ currentCvUrl }: UpdateCVFormProps) {
     </Form>
   );
 }
-
-    
