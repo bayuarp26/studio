@@ -6,12 +6,12 @@ import { Button } from '@/components/ui/button';
 import SectionContainer from '@/components/section-container';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import Image from 'next/image';
-import { Home, ImageUp, ListChecks, Trash2, UserCog } from 'lucide-react';
+import { Home, ImageUp, ListChecks, FileText, UserCog } from 'lucide-react'; // Added FileText
 import UpdateProfileImageForm from './_components/update-profile-image-form';
 import ManageSkillsSection from './_components/manage-skills-section';
-import type { SkillData, ProfileDataType } from '@/app/page'; // Import from page.tsx
+import UpdateCVForm from './_components/update-cv-form'; // Import new component
+import type { SkillData, ProfileDataType } from '@/app/page'; 
 
-// Duplicating getSkills here for simplicity, or it could be moved to a shared lib
 async function getSkills(): Promise<SkillData[]> {
   try {
     const client: MongoClient = await clientPromise;
@@ -25,28 +25,15 @@ async function getSkills(): Promise<SkillData[]> {
   }
 }
 
-// This function will simulate fetching the current heroImageUrl
-// In a real scenario with DB-driven profile, this would fetch from DB
-// For now, we assume src/app/page.tsx is the source of truth and changes apply there
 async function getCurrentHeroImageUrl(): Promise<string> {
-    // This is a simplified way to get it. In a real app, this might be structured differently
-    // or read directly if page.tsx wasn't modified at runtime this way.
-    // For the purpose of this example, we'll assume it's a known static or placeholder.
-    // The actual update happens by modifying page.tsx via an action.
-    // Let's return the default one defined in page.tsx as a fallback.
-    // The admin page will show this, and if updated, page.tsx changes, and a page refresh will show the new one.
-    return "/profile.png"; // This is the default one from current page.tsx
+    return "/profile.png"; 
 }
-
 
 export default async function AdminProfilePage() {
   const skills = await getSkills();
-  // For heroImageUrl, the action directly modifies page.tsx.
-  // Displaying the *truly* current one is tricky without reading page.tsx here,
-  // which isn't typical for a page component. The UpdateProfileImageForm
-  // will handle previewing the newly uploaded image.
-  // The image displayed initially could be the one from public for simplicity.
   const initialHeroImageUrl = await getCurrentHeroImageUrl();
+  // The current CV URL is static in page.tsx for this example
+  const currentCvUrl = "/download/Wahyu_Pratomo-cv.pdf";
 
 
   return (
@@ -69,8 +56,8 @@ export default async function AdminProfilePage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <Card className="shadow-lg">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <Card className="shadow-lg md:col-span-1">
           <CardHeader>
             <CardTitle className="flex items-center text-primary">
               <ImageUp className="mr-2 h-5 w-5" />
@@ -83,7 +70,7 @@ export default async function AdminProfilePage() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-lg">
+        <Card className="shadow-lg md:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center text-primary">
               <UserCog className="mr-2 h-5 w-5" />
@@ -93,6 +80,19 @@ export default async function AdminProfilePage() {
           </CardHeader>
           <CardContent>
             <ManageSkillsSection initialSkills={skills} />
+          </CardContent>
+        </Card>
+        
+        <Card className="shadow-lg md:col-span-3"> {/* CV Card spanning full width on md */}
+          <CardHeader>
+            <CardTitle className="flex items-center text-primary">
+              <FileText className="mr-2 h-5 w-5" />
+              Ganti File CV
+            </CardTitle>
+            <CardDescription>Unggah file CV baru dalam format PDF. File saat ini akan diganti.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <UpdateCVForm currentCvUrl={currentCvUrl} />
           </CardContent>
         </Card>
       </div>

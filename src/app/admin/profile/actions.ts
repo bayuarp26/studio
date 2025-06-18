@@ -17,6 +17,17 @@ const profileImageSchema = z.object({
 
 const skillNameSchema = z.string().min(2, { message: "Nama keahlian minimal 2 karakter." });
 
+const MAX_CV_SIZE = 2 * 1024 * 1024; // 2MB
+const ACCEPTED_CV_TYPES = ["application/pdf"];
+
+const cvFileSchema = z.instanceof(File)
+  .refine((file) => file.size <= MAX_CV_SIZE, `Ukuran file CV maksimal ${MAX_CV_SIZE / (1024*1024)}MB.`)
+  .refine(
+    (file) => ACCEPTED_CV_TYPES.includes(file.type),
+    "Format file CV tidak valid. Harap unggah file PDF."
+  );
+
+
 export async function updateProfileImageAction(
   imageDataUri: string
 ): Promise<{ success: boolean; error?: string }> {
@@ -31,7 +42,6 @@ export async function updateProfileImageAction(
     const pageFilePath = path.join(process.cwd(), 'src', 'app', 'page.tsx');
     let fileContent = await fs.readFile(pageFilePath, 'utf-8');
 
-    // Regex untuk heroImageUrl
     const heroRegex = /(heroImageUrl:\s*["'])(.*?)(["'])/;
     if (!heroRegex.test(fileContent)) {
       console.error("heroImageUrl pattern not found in src/app/page.tsx.");
@@ -39,8 +49,6 @@ export async function updateProfileImageAction(
     }
     fileContent = fileContent.replace(heroRegex, `$1${validatedDataUri}$3`);
 
-    // Regex untuk about.imageUrl
-    // Mencari 'about: {' kemudian karakter apa pun (non-greedy) hingga 'imageUrl: "'
     const aboutImageRegex = /(about:\s*\{\s*[\s\S]*?imageUrl:\s*["'])(.*?)(["'])/;
     if (!aboutImageRegex.test(fileContent)) {
       console.error("about.imageUrl pattern not found in src/app/page.tsx. About image will not be updated.");
@@ -50,8 +58,8 @@ export async function updateProfileImageAction(
     
     await fs.writeFile(pageFilePath, fileContent, 'utf-8');
 
-    revalidatePath('/'); // Revalidate the home page where the image is displayed
-    revalidatePath('/admin/profile'); // Revalidate the admin page
+    revalidatePath('/'); 
+    revalidatePath('/admin/profile'); 
     return { success: true };
 
   } catch (error) {
@@ -80,7 +88,6 @@ export async function addSkillAction(
     const db = client.db();
     const skillsCollection: Collection<Document> = db.collection("skills");
 
-    // Check if skill already exists (case-insensitive check)
     const existingSkill = await skillsCollection.findOne({ name: { $regex: `^${validatedName}$`, $options: 'i' } });
     if (existingSkill) {
       return { success: false, error: `Keahlian "${validatedName}" sudah ada.` };
@@ -144,3 +151,62 @@ export async function deleteSkillAction(
   }
 }
 
+export async function updateCVAction(
+  formData: FormData
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const cvFile = formData.get("cvFile") as File | null;
+
+    if (!cvFile) {
+      return { success: false, error: "File CV tidak ditemukan." };
+    }
+
+    const validationResult = cvFileSchema.safeParse(cvFile);
+    if (!validationResult.success) {
+      const firstError = validationResult.error.flatten().formErrors[0];
+      return { success: false, error: firstError || "File CV tidak valid." };
+    }
+
+    const validatedFile = validationResult.data;
+    const newFilename = "Wahyu_Pratomo-cv.pdf"; // Fixed filename
+    const publicDir = path.join(process.cwd(), 'public');
+    const downloadDir = path.join(publicDir, 'download');
+    const cvFilePath = path.join(downloadDir, newFilename);
+
+    // Ensure download directory exists
+    await fs.mkdir(downloadDir, { recursive: true });
+
+    // Save the file
+    const bytes = await validatedFile.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    await fs.writeFile(cvFilePath, buffer);
+
+    // Update cvUrl in src/app/page.tsx to ensure it's correct
+    const pageFilePath = path.join(process.cwd(), 'src', 'app', 'page.tsx');
+    let fileContent = await fs.readFile(pageFilePath, 'utf-8');
+    
+    const cvUrlRegex = /(cvUrl:\s*["'])(.*?)(["'])/;
+    const newCvUrl = `/download/${newFilename}`;
+
+    if (!cvUrlRegex.test(fileContent)) {
+        console.warn("cvUrl pattern not found in src/app/page.tsx. It might be a new setup or the pattern changed.");
+        // Attempt to add it if a known structure exists, or handle as appropriate.
+        // For now, we'll assume it might need to be updated if present.
+    }
+    
+    fileContent = fileContent.replace(cvUrlRegex, `$1${newCvUrl}$3`);
+    await fs.writeFile(pageFilePath, fileContent, 'utf-8');
+
+    revalidatePath('/'); // Revalidate home page
+    revalidatePath('/admin/profile'); // Revalidate admin page
+    return { success: true };
+
+  } catch (error) {
+    console.error("Error in updateCVAction:", error);
+    let errorMessage = "Terjadi kesalahan pada server saat memperbarui CV.";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    return { success: false, error: errorMessage };
+  }
+}
