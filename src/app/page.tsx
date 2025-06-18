@@ -2,6 +2,8 @@
 import PortfolioContent from '@/app/portfolio-content';
 import clientPromise from '@/lib/mongodb';
 import type { MongoClient, ObjectId, Collection, Document } from 'mongodb';
+import { cookies } from 'next/headers';
+import { verifySessionToken } from '@/lib/authUtils';
 
 // Interface untuk dokumen proyek dari database
 interface ProjectDocument {
@@ -22,12 +24,10 @@ interface SkillDocument {
 }
 
 // Interface untuk dokumen pengaturan profil dari database
-// Ini akan digunakan untuk mengambil profileImageUri dan cvDataUri dari koleksi 'profile_settings'
-// Koleksi 'profile_settings' akan berada di dalam database default (misal: portofolioDB)
 interface ProfileSettingsDocument {
   _id?: ObjectId;
   profileImageUri?: string;
-  cvDataUri?: string; // Menyimpan Data URI dari file CV PDF
+  cvDataUri?: string; 
 }
 
 
@@ -60,7 +60,7 @@ export interface PortfolioDataType {
       github: string;
       linkedin: string;
     };
-    cvUrl: string; // Ini akan menjadi Data URI CV atau string kosong
+    cvUrl: string; 
     about: {
       imageUrl: string;
       imageHint: string;
@@ -73,14 +73,13 @@ export interface PortfolioDataType {
     copyrightYear: number;
 }
 
+const ADMIN_AUTH_COOKIE_NAME = 'admin-auth-token';
 
 // Fungsi untuk mengambil data proyek dari MongoDB
 async function getProjects(): Promise<ProjectData[]> {
   try {
     const client: MongoClient = await clientPromise;
-    // Menggunakan database default yang dikonfigurasi di MONGODB_URI (misal: portofolioDB)
     const db = client.db();
-    // Koleksi 'projects' akan berada di dalam database default tersebut
     const projectsCollection = db.collection<ProjectDocument>("projects");
     const projects = await projectsCollection.find({}).sort({ createdAt: -1 }).toArray();
     return projects.map(p => ({
@@ -98,9 +97,7 @@ async function getProjects(): Promise<ProjectData[]> {
 async function getSkills(): Promise<SkillData[]> {
   try {
     const client: MongoClient = await clientPromise;
-    // Menggunakan database default yang dikonfigurasi di MONGODB_URI (misal: portofolioDB)
     const db = client.db();
-    // Koleksi 'skills' akan berada di dalam database default tersebut
     const skillsCollection = db.collection<SkillDocument>("skills");
     const skills = await skillsCollection.find({}).sort({ name: 1 }).toArray();
     return skills.map(s => ({ ...s, _id: s._id.toString(), name: s.name }));
@@ -114,16 +111,14 @@ async function getSkills(): Promise<SkillData[]> {
 async function getProfileSettingsData(): Promise<Partial<ProfileSettingsDocument>> {
   try {
     const client: MongoClient = await clientPromise;
-    // Menggunakan database default yang dikonfigurasi di MONGODB_URI (misal: portofolioDB)
     const db = client.db();
-    // Koleksi 'profile_settings' akan berada di dalam database default tersebut
     const profileSettingsCollection: Collection<ProfileSettingsDocument> = db.collection("profile_settings");
     const settings = await profileSettingsCollection.findOne({});
 
     if (settings) {
       return {
         profileImageUri: settings.profileImageUri,
-        cvDataUri: settings.cvDataUri, // Mengambil cvDataUri
+        cvDataUri: settings.cvDataUri,
       };
     }
     return {};
@@ -135,6 +130,31 @@ async function getProfileSettingsData(): Promise<Partial<ProfileSettingsDocument
 
 
 export default async function PortfolioPage() {
+  let isAdminLoggedIn = false;
+  const tokenCookie = cookies().get(ADMIN_AUTH_COOKIE_NAME);
+
+  if (tokenCookie && tokenCookie.value) {
+    const payload = await verifySessionToken(tokenCookie.value);
+    if (payload) {
+      isAdminLoggedIn = true;
+    }
+  }
+
+  if (isAdminLoggedIn) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-8 text-center">
+        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-16 w-16 text-primary mb-6">
+          <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+        </svg>
+        <h1 className="text-3xl md:text-4xl font-bold text-primary mb-4">Sorry, this app is under construction!</h1>
+        <p className="text-lg text-muted-foreground mb-8">The main portfolio page is temporarily unavailable while you are logged in as an admin.</p>
+        <p className="text-sm text-muted-foreground">
+          Please <a href="/admin/profile" className="text-primary hover:underline font-semibold">go to the Admin Panel</a> or log out to view the site.
+        </p>
+      </div>
+    );
+  }
+
   const [fetchedProjects, fetchedSkills, profileSettings] = await Promise.all([
     getProjects(),
     getSkills(),
@@ -150,7 +170,7 @@ export default async function PortfolioPage() {
 
   const cvDataUriFromDB = (profileSettings.cvDataUri && profileSettings.cvDataUri.startsWith('data:application/pdf;base64,'))
                          ? profileSettings.cvDataUri
-                         : ""; // String kosong jika tidak ada atau tidak valid
+                         : ""; 
 
 
   const portfolioData: PortfolioDataType = {
@@ -163,7 +183,7 @@ export default async function PortfolioPage() {
       github: "https://github.com/bayuarp26/",
       linkedin: "https://linkedin.com/in/wahyupratomo26",
     },
-    cvUrl: cvDataUriFromDB, // Menggunakan Data URI CV dari database
+    cvUrl: cvDataUriFromDB, 
     about: {
       imageUrl: profileImageFromDB || aboutPlaceholder,
       imageHint: "professional activity",
@@ -184,5 +204,3 @@ export default async function PortfolioPage() {
 
   return <PortfolioContent portfolioData={portfolioData} />;
 }
-
-    
