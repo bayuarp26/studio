@@ -6,27 +6,26 @@ import { revalidatePath } from "next/cache";
 import clientPromise from "@/lib/mongodb";
 import type { MongoClient, Collection, Document } from 'mongodb';
 
-// Skema validasi untuk input proyek, mirip dengan ProjectFormValues di client
-// tapi ini untuk validasi di server.
+// Skema validasi untuk input proyek
 const projectInputSchema = z.object({
-  title: z.string().min(2),
-  imageUrl: z.string().url(),
-  imageHint: z.string().min(2),
-  description: z.string().min(10),
-  details: z.string().min(1), // Akan di-split menjadi array
-  tags: z.string().min(1),    // Akan di-split menjadi array
+  title: z.string().min(2, { message: "Judul proyek minimal 2 karakter." }),
+  imageUrl: z.string().refine(val => val.startsWith('data:image/'), { 
+    message: "URL Gambar harus berupa Data URI yang valid (diawali dengan 'data:image/')." 
+  }),
+  imageHint: z.string().min(2, { message: "Petunjuk gambar minimal 2 karakter." }),
+  description: z.string().min(10, { message: "Deskripsi minimal 10 karakter." }),
+  details: z.string().min(1, { message: "Detail proyek tidak boleh kosong." }),
+  tags: z.string().min(1, { message: "Tag tidak boleh kosong." }),
 });
 
-// Tipe data yang akan disimpan di MongoDB, mirip dengan ProjectData di src/app/page.tsx
-// tapi tanpa _id karena itu akan digenerate MongoDB.
 interface ProjectDocumentToInsert {
   title: string;
-  imageUrl: string;
+  imageUrl: string; // Akan menyimpan Data URI
   imageHint: string;
   description: string;
   details: string[];
   tags: string[];
-  createdAt: Date; // Menambahkan timestamp
+  createdAt: Date;
 }
 
 
@@ -37,7 +36,6 @@ export async function addProjectAction(
     const validationResult = projectInputSchema.safeParse(data);
     if (!validationResult.success) {
       console.error("Validation error:", validationResult.error.flatten().fieldErrors);
-      // Mengambil pesan error pertama untuk ditampilkan
       const firstError = Object.values(validationResult.error.flatten().fieldErrors)[0]?.[0];
       return { success: false, error: firstError || "Data input tidak valid." };
     }
@@ -45,7 +43,7 @@ export async function addProjectAction(
     const validatedData = validationResult.data;
 
     const client: MongoClient = await clientPromise;
-    const db = client.db(); // Menggunakan database yang dikonfigurasi di MONGODB_URI
+    const db = client.db(); 
     const projectsCollection: Collection<Document> = db.collection("projects");
 
     const detailsArray = validatedData.details
@@ -60,19 +58,20 @@ export async function addProjectAction(
 
     const projectToInsert: ProjectDocumentToInsert = {
       title: validatedData.title,
-      imageUrl: validatedData.imageUrl,
+      imageUrl: validatedData.imageUrl, // Simpan Data URI
       imageHint: validatedData.imageHint,
       description: validatedData.description,
       details: detailsArray,
       tags: tagsArray,
-      createdAt: new Date(), // Tambahkan tanggal pembuatan
+      createdAt: new Date(), 
     };
 
     const result = await projectsCollection.insertOne(projectToInsert);
 
     if (result.insertedId) {
-      revalidatePath("/"); // Revalidasi halaman utama agar menampilkan proyek baru
-      revalidatePath("/admin/add-project"); // Mungkin tidak perlu, tapi bisa untuk membersihkan state form
+      revalidatePath("/"); 
+      revalidatePath("/admin/add-project"); 
+      revalidatePath("/admin/projects"); // Revalidasi halaman daftar proyek admin
       return { success: true, projectId: result.insertedId.toString() };
     } else {
       return { success: false, error: "Gagal menyimpan proyek ke database." };
@@ -83,6 +82,11 @@ export async function addProjectAction(
     if (error instanceof Error) {
         errorMessage = error.message;
     }
+    if (error instanceof z.ZodError) {
+        errorMessage = error.errors.map(e => e.message).join(', ');
+    }
     return { success: false, error: errorMessage };
   }
 }
+
+    

@@ -2,7 +2,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,14 +20,20 @@ import { useToast } from "@/hooks/use-toast";
 import { addProjectAction } from "./actions";
 import SectionContainer from "@/components/section-container";
 import Link from 'next/link';
-import { ListOrdered } from 'lucide-react';
+import { ListOrdered, UploadCloud, XCircle } from 'lucide-react';
+import Image from "next/image";
+import { useCallback, useState } from "react";
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
 
 const projectFormSchema = z.object({
   title: z.string().min(2, {
     message: "Judul proyek minimal harus 2 karakter.",
   }),
-  imageUrl: z.string().url({ message: "Harap masukkan URL gambar yang valid." }),
+  imageUrl: z.string().refine(val => val.startsWith('data:image/'), {
+    message: "Harap unggah gambar yang valid (format Data URI).",
+  }),
   imageHint: z.string().min(2, {
     message: "Petunjuk gambar minimal harus 2 karakter.",
   }),
@@ -46,11 +52,14 @@ export type ProjectFormValues = z.infer<typeof projectFormSchema>;
 
 export default function AddProjectPage() {
   const { toast } = useToast();
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(projectFormSchema),
     defaultValues: {
       title: "",
-      imageUrl: "https://placehold.co/700x500.png",
+      imageUrl: "",
       imageHint: "",
       description: "",
       details: "",
@@ -58,6 +67,60 @@ export default function AddProjectPage() {
     },
     mode: "onChange",
   });
+
+  const handleFileChange = useCallback((file: File | null, onChange: (value: string) => void) => {
+    if (file) {
+      if (file.size > MAX_FILE_SIZE) {
+        form.setError("imageUrl", { type: "manual", message: `Ukuran file maksimal ${MAX_FILE_SIZE / (1024*1024)}MB.` });
+        setImagePreview(null);
+        onChange("");
+        return;
+      }
+      if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+        form.setError("imageUrl", { type: "manual", message: "Format gambar tidak didukung. Gunakan JPG, PNG, GIF, atau WEBP." });
+        setImagePreview(null);
+        onChange("");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const dataUri = reader.result as string;
+        setImagePreview(dataUri);
+        onChange(dataUri);
+        form.clearErrors("imageUrl");
+      };
+      reader.onerror = () => {
+        form.setError("imageUrl", { type: "manual", message: "Gagal membaca file gambar." });
+        setImagePreview(null);
+        onChange("");
+      }
+      reader.readAsDataURL(file);
+    } else {
+      setImagePreview(null);
+      onChange("");
+    }
+  }, [form]);
+
+  const onDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setIsDragging(true);
+  };
+
+  const onDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setIsDragging(false);
+  };
+
+  const onDrop = (event: React.DragEvent<HTMLDivElement>, onChange: (value: string) => void) => {
+    event.preventDefault();
+    setIsDragging(false);
+    const file = event.dataTransfer.files?.[0];
+    if (file) {
+      handleFileChange(file, onChange);
+    }
+  };
+
 
   async function onSubmit(data: ProjectFormValues) {
     try {
@@ -68,6 +131,7 @@ export default function AddProjectPage() {
           description: `Proyek "${data.title}" telah disimpan ke database.`,
         });
         form.reset();
+        setImagePreview(null);
       } else {
         toast({
           variant: "destructive",
@@ -111,22 +175,79 @@ export default function AddProjectPage() {
                 </FormItem>
               )}
             />
+            
             <FormField
               control={form.control}
               name="imageUrl"
-              render={({ field }) => (
+              render={({ field: { onChange, value, ...restField } }) => (
                 <FormItem>
-                  <FormLabel>URL Gambar</FormLabel>
+                  <FormLabel>Gambar Proyek</FormLabel>
                   <FormControl>
-                    <Input placeholder="https://placehold.co/700x500.png" {...field} />
+                    <div
+                      className={`mt-1 flex justify-center px-6 pt-5 pb-6 border-2 ${
+                        form.formState.errors.imageUrl ? 'border-destructive' : 'border-border'
+                      } border-dashed rounded-md ${isDragging ? 'bg-accent/50' : ''}`}
+                      onDragOver={onDragOver}
+                      onDragLeave={onDragLeave}
+                      onDrop={(e) => onDrop(e, onChange)}
+                    >
+                      <div className="space-y-1 text-center">
+                        {imagePreview ? (
+                          <div className="relative group w-full max-w-md mx-auto">
+                            <Image
+                              src={imagePreview}
+                              alt="Preview Gambar Proyek"
+                              width={400}
+                              height={300}
+                              className="mx-auto rounded-md object-contain max-h-[300px]"
+                            />
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="icon"
+                              className="absolute top-2 right-2 opacity-70 group-hover:opacity-100 transition-opacity"
+                              onClick={() => {
+                                setImagePreview(null);
+                                onChange("");
+                                const fileInput = document.getElementById('file-upload') as HTMLInputElement | null;
+                                if (fileInput) fileInput.value = "";
+                              }}
+                            >
+                              <XCircle className="h-5 w-5" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <>
+                            <UploadCloud className="mx-auto h-12 w-12 text-muted-foreground" />
+                            <div className="flex text-sm text-muted-foreground">
+                              <label
+                                htmlFor="file-upload"
+                                className="relative cursor-pointer rounded-md font-medium text-primary hover:text-primary/80 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-ring"
+                              >
+                                <span>Unggah file</span>
+                                <input 
+                                  id="file-upload" 
+                                  name="file-upload" 
+                                  type="file" 
+                                  className="sr-only" 
+                                  accept={ACCEPTED_IMAGE_TYPES.join(",")}
+                                  onChange={(e) => handleFileChange(e.target.files?.[0] || null, onChange)}
+                                  {...restField}
+                                />
+                              </label>
+                              <p className="pl-1">atau tarik dan lepas</p>
+                            </div>
+                            <p className="text-xs text-muted-foreground">PNG, JPG, GIF, WEBP hingga {MAX_FILE_SIZE / (1024*1024)}MB</p>
+                          </>
+                        )}
+                      </div>
+                    </div>
                   </FormControl>
-                  <FormDescription>
-                    Gunakan URL gambar yang valid.
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
               name="imageHint"
@@ -209,3 +330,5 @@ export default function AddProjectPage() {
     </SectionContainer>
   );
 }
+
+    
