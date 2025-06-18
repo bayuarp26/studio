@@ -4,20 +4,28 @@ import { SignJWT, jwtVerify } from 'jose';
 import type { JWTPayload } from 'jose';
 
 const saltRounds = 10;
-// Pastikan JWT_SECRET_KEY diatur di environment variables Anda!
-// Idealnya ini harus berupa string acak yang panjang dan kuat.
+
+// KRITIKAL UNTUK DEPLOYMENT VERCEL:
+// Pastikan variabel lingkungan JWT_SECRET_KEY telah diatur dengan BENAR
+// di pengaturan Environment Variables proyek Vercel Anda.
+// Ini harus berupa string acak yang panjang dan kuat untuk keamanan.
+// Kegagalan mengatur ini akan menyebabkan error saat pembuatan atau verifikasi token.
 const JWT_SECRET_KEY_STRING = process.env.JWT_SECRET_KEY;
 
-if (!JWT_SECRET_KEY_STRING) {
-  // Di lingkungan server-side (seperti middleware atau server actions), ini akan menyebabkan error saat start-up.
-  // Di lingkungan client-side (jika file ini secara tidak sengaja diimpor), process.env mungkin tidak tersedia.
-  // Untuk produksi, pastikan ini selalu ada.
-  console.error('Kritis: Variabel lingkungan "JWT_SECRET_KEY" tidak ditemukan.');
-  // Anda bisa memilih untuk throw error di sini jika ini adalah bagian kritis dari startup server
-  // throw new Error('Missing environment variable: "JWT_SECRET_KEY"');
+if (!JWT_SECRET_KEY_STRING && process.env.NODE_ENV === 'production') {
+  // Di lingkungan produksi (seperti Vercel), ini adalah error kritis.
+  console.error('KRITIS: Variabel lingkungan "JWT_SECRET_KEY" tidak ditemukan untuk produksi.');
+  // Sebaiknya throw error agar build gagal jika ini terjadi di produksi.
+  // throw new Error('Missing critical environment variable for production: "JWT_SECRET_KEY"');
+} else if (!JWT_SECRET_KEY_STRING) {
+  console.warn('PERINGATAN: Variabel lingkungan "JWT_SECRET_KEY" tidak ditemukan. Menggunakan nilai default untuk pengembangan. JANGAN GUNAKAN INI DI PRODUKSI.');
+  // Untuk pengembangan lokal jika tidak diset, bisa menggunakan nilai default,
+  // tapi ini TIDAK BOLEH digunakan di produksi.
+  // process.env.JWT_SECRET_KEY = 'default-dev-secret-key-please-set-in-env';
 }
 
-// Hanya encode jika JWT_SECRET_KEY_STRING ada
+
+// Hanya encode jika JWT_SECRET_KEY_STRING ada dan valid
 const secret = JWT_SECRET_KEY_STRING ? new TextEncoder().encode(JWT_SECRET_KEY_STRING) : undefined;
 
 const issuer = 'urn:portfolio:issuer';
@@ -40,7 +48,7 @@ export interface AdminJWTPayload extends JWTPayload {
 
 export async function createSessionToken(payload: AdminJWTPayload): Promise<string> {
   if (!secret) {
-    throw new Error('JWT secret key is not configured. Cannot create session token.');
+    throw new Error('Kunci rahasia JWT tidak dikonfigurasi. Tidak dapat membuat token sesi.');
   }
   return new SignJWT(payload)
     .setProtectedHeader({ alg: 'HS256' })
@@ -54,7 +62,7 @@ export async function createSessionToken(payload: AdminJWTPayload): Promise<stri
 
 export async function verifySessionToken(token: string): Promise<AdminJWTPayload | null> {
   if (!secret) {
-    console.error('JWT secret key is not configured. Cannot verify session token.');
+    console.error('Kunci rahasia JWT tidak dikonfigurasi. Tidak dapat memverifikasi token sesi.');
     return null;
   }
   try {
@@ -66,7 +74,7 @@ export async function verifySessionToken(token: string): Promise<AdminJWTPayload
   } catch (error) {
     // Jangan log error token yang kadaluarsa atau tidak valid secara detail ke konsol produksi
     // kecuali untuk debugging internal.
-    // console.error('JWT Verification Error:', error); 
+    // console.error('JWT Verification Error:', error);
     return null;
   }
 }

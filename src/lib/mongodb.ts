@@ -1,29 +1,26 @@
 import { MongoClient, ServerApiVersion } from 'mongodb';
 
-// This is the critical environment variable that needs to be set.
-// For Vercel deployment, ensure MONGODB_URI is added to your project's
-// Environment Variables in the Vercel dashboard settings.
+// KRITIKAL UNTUK DEPLOYMENT VERCEL:
+// Pastikan variabel lingkungan MONGODB_URI telah diatur dengan BENAR
+// di pengaturan Environment Variables proyek Vercel Anda.
+// Kegagalan mengatur ini akan menyebabkan error "Invalid/Missing environment variable: "MONGODB_URI"" saat build atau runtime.
 if (!process.env.MONGODB_URI) {
-  // This error will be thrown if the MONGODB_URI environment variable is not set at all.
-  // This is the error you are seeing on Vercel: "Invalid/Missing environment variable: "MONGODB_URI""
   throw new Error('Invalid/Missing environment variable: "MONGODB_URI"');
 }
 
 const uri = process.env.MONGODB_URI;
 
-// Ensure the MONGODB_URI is in the correct format.
-// For MongoDB Atlas, it typically looks like:
-// mongodb+srv://<username>:<password>@<cluster-address>/<DATABASE_NAME>?retryWrites=true&w=majority
+// Format MONGODB_URI yang benar untuk MongoDB Atlas adalah:
+// mongodb+srv://<USERNAME>:<PASSWORD>@<CLUSTER_URL>/<DATABASE_NAME>?retryWrites=true&w=majority
 //
-// CRITICAL: The <DATABASE_NAME> part IS REQUIRED in the URI.
-// If your URI (from .env.local or Vercel Environment Variables) looks like "...@cluster-address.mongodb.net/"
-// (ending with a slash WITHOUT a database name), you MUST add your database name before any query parameters.
-// For example, if your URI is: mongodb+srv://user:pass@cluster.mongodb.net/
-// And your database is 'myAppDB', it should become: mongodb+srv://user:pass@cluster.mongodb.net/myAppDB?retryWrites=true&w=majority
+// PASTIKAN:
+// 1. <USERNAME> dan <PASSWORD> sudah benar.
+// 2. <PASSWORD> tidak mengandung karakter spesial seperti '<' atau '>' kecuali jika memang bagian dari password dan sudah di-URL-encode jika perlu.
+// 3. <CLUSTER_URL> adalah alamat cluster Anda (contoh: cluster-porto.hpgcbuz.mongodb.net).
+// 4. <DATABASE_NAME> adalah NAMA DATABASE spesifik yang ingin Anda gunakan (contoh: portofolioDB). Ini WAJIB ada di URI.
 //
-// Also, ensure that your password in the URI does not contain special characters like '<' or '>'
-// unless they are truly part of the password and are properly URL-encoded if necessary.
-// Example: If password is 'my<pass>word', the '<' and '>' might need encoding or removal if not part of the actual password.
+// Contoh URI yang lengkap:
+// mongodb+srv://cloud-hoster:K50Tqrh3xG55hdUJ@cluster-porto.hpgcbuz.mongodb.net/portofolioDB?retryWrites=true&w=majority
 
 const options = {
   serverApi: {
@@ -54,4 +51,8 @@ if (process.env.NODE_ENV === 'development') {
   clientPromise = client.connect();
 }
 
+// Default export adalah clientPromise yang akan digunakan di seluruh aplikasi
+// untuk berinteraksi dengan database.
+// Koleksi-koleksi seperti 'projects', 'skills', 'admin_users', 'profile_settings'
+// akan dibuat/digunakan DI DALAM database yang telah dikonfigurasi pada MONGODB_URI.
 export default clientPromise;
