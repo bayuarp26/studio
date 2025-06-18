@@ -18,7 +18,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { addProjectAction } from "./actions";
-import SectionContainer from "@/components/section-container"; // Menggunakan SectionContainer untuk styling konsisten
+import SectionContainer from "@/components/section-container";
+import Link from 'next/link';
+import { ListOrdered } from 'lucide-react';
+
 
 const projectFormSchema = z.object({
   title: z.string().min(2, {
@@ -84,7 +87,15 @@ export default function AddProjectPage() {
   return (
     <SectionContainer id="add-project-admin" className="bg-background min-h-screen pt-24 md:pt-32">
       <div className="max-w-2xl mx-auto">
-        <h1 className="section-title mb-12 text-center">Tambah Proyek Baru</h1>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10">
+            <h1 className="section-title mb-4 sm:mb-0">Tambah Proyek Baru</h1>
+            <Button asChild variant="outline">
+              <Link href="/admin/projects">
+                <ListOrdered className="mr-2 h-4 w-4" />
+                Lihat Semua Proyek
+              </Link>
+            </Button>
+        </div>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <FormField
@@ -198,4 +209,3 @@ export default function AddProjectPage() {
     </SectionContainer>
   );
 }
-
