@@ -6,7 +6,11 @@ if (!process.env.MONGODB_URI) {
 
 const uri = process.env.MONGODB_URI;
 
-// Placeholder check removed from here
+// Ensure the MONGODB_URI is in the correct format.
+// For MongoDB Atlas, it typically looks like:
+// mongodb+srv://<username>:<password>@<cluster-address>/<database-name>?retryWrites=true&w=majority
+// The error "querySrv ENOTFOUND" often means the <cluster-address> is incorrect or not resolvable,
+// or the URI is not using the 'mongodb+srv://' prefix for an Atlas SRV connection.
 
 const options = {
   serverApi: {
