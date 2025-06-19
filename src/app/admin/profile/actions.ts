@@ -372,7 +372,7 @@ export async function logoutAction(): Promise<{ success: boolean }> {
     const profileSettingsCollection: Collection<ProfileSettingsDocument> = db.collection("profile_settings");
     await profileSettingsCollection.updateOne(
       {}, 
-      { $set: { isAppUnderConstruction: false, constructionModeActiveUntil: null } }, // DRP: Clear on logout
+      { $set: { isAppUnderConstruction: false, constructionModeActiveUntil: null } }, 
       { upsert: true } 
     );
     console.log("logoutAction: Mode 'isAppUnderConstruction' dinonaktifkan dan 'constructionModeActiveUntil' dihapus.");
@@ -404,6 +404,7 @@ export async function getAdminProfileInitialData(): Promise<{ success: boolean; 
     const mappedSkills = skills.map(s => ({ ...s, _id: s._id.toString() }));
     console.log(`getAdminProfileInitialData: ${mappedSkills.length} skill ditemukan.`);
 
+    // Memanggil getProfileSettingsDataInternal yang sudah dimodifikasi
     const settingsResult = await getProfileSettingsDataInternal(db); 
 
     let currentHeroImageUrl = "https://placehold.co/240x240.png";
@@ -444,29 +445,45 @@ async function getProfileSettingsDataInternal(db: ReturnType<MongoClient['db']>)
   profileImageUri?: string;
   cvDataUri?: string;
   isAppUnderConstruction: boolean;
+  constructionModeActiveUntil?: Date | null;
 }> {
   const profileSettingsCollection: Collection<ProfileSettingsDocument> = db.collection("profile_settings");
   let settings = await profileSettingsCollection.findOne({});
   
-  console.log("getProfileSettingsDataInternal: Pengaturan profil diambil:", settings ? "Ada data" : "Tidak ada data/Kosong");
+  console.log("getProfileSettingsDataInternal: Pengaturan profil awal diambil:", settings ? `Ada data (isAppUnderConstruction: ${settings.isAppUnderConstruction}, activeUntil: ${settings.constructionModeActiveUntil?.toISOString()})` : "Tidak ada data/Kosong");
 
   let effectiveIsUnderConstruction = settings?.isAppUnderConstruction ?? false;
   const activeUntil = settings?.constructionModeActiveUntil;
 
   if (effectiveIsUnderConstruction && activeUntil && new Date(activeUntil) < new Date()) {
-    console.log("getProfileSettingsDataInternal: Mode 'under construction' kedaluwarsa. Menonaktifkan di DB.");
-    effectiveIsUnderConstruction = false;
-    await profileSettingsCollection.updateOne(
-      {},
-      { $set: { isAppUnderConstruction: false, constructionModeActiveUntil: null } }, // DRP: Auto-reset
-      { upsert: true } // upsert true untuk kasus dimana dokumen belum ada sama sekali
-    );
-    // settings akan tetap berisi data lama setelah update ini, kecuali di-refetch.
-    // Untuk return value, kita gunakan effectiveIsUnderConstruction yang sudah dikoreksi.
+    console.log(`getProfileSettingsDataInternal: Mode 'under construction' KEDALUWARSA (aktif hingga ${new Date(activeUntil).toISOString()}). Menonaktifkan di DB...`);
+    try {
+      await profileSettingsCollection.updateOne(
+        {},
+        { $set: { isAppUnderConstruction: false, constructionModeActiveUntil: null } },
+        { upsert: true }
+      );
+      console.log("getProfileSettingsDataInternal: Mode 'under construction' BERHASIL dinonaktifkan di DB via DRP.");
+      // Setelah berhasil update, pastikan nilai yang dikembalikan adalah yang baru
+      return {
+        profileImageUri: settings?.profileImageUri,
+        cvDataUri: settings?.cvDataUri,
+        isAppUnderConstruction: false, // Explicitly false
+        constructionModeActiveUntil: null, // Explicitly null
+      };
+    } catch (error) {
+        console.error("getProfileSettingsDataInternal: GAGAL menonaktifkan mode 'under construction' di DB via DRP:", error);
+        // Jika update DB gagal, kita kembalikan status konstruksi yang kedaluwarsa (masih true)
+        // agar ada kesempatan lagi di request berikutnya atau agar masalahnya terlihat.
+        // Atau, bisa juga dianggap false untuk sementara agar situs tidak terkunci,
+        // tapi ini bisa menyembunyikan masalah DB. Lebih baik log error dan biarkan.
+    }
   } else if (effectiveIsUnderConstruction && activeUntil) {
-    console.log(`getProfileSettingsDataInternal: Mode 'under construction' aktif hingga ${new Date(activeUntil).toISOString()}.`);
+    console.log(`getProfileSettingsDataInternal: Mode 'under construction' AKTIF hingga ${new Date(activeUntil).toISOString()}.`);
   } else if (effectiveIsUnderConstruction && !activeUntil) {
-    console.warn("getProfileSettingsDataInternal: Mode 'under construction' aktif tapi tidak ada 'constructionModeActiveUntil'. Ini seharusnya tidak terjadi. Mempertimbangkan sebagai aktif.");
+    console.warn("getProfileSettingsDataInternal: Mode 'under construction' aktif tapi 'constructionModeActiveUntil' tidak ada. Ini seharusnya tidak terjadi. Mempertimbangkan sebagai aktif.");
+  } else if (!effectiveIsUnderConstruction) {
+    console.log("getProfileSettingsDataInternal: Mode 'under construction' TIDAK AKTIF.");
   }
 
 
@@ -474,6 +491,7 @@ async function getProfileSettingsDataInternal(db: ReturnType<MongoClient['db']>)
     profileImageUri: settings?.profileImageUri,
     cvDataUri: settings?.cvDataUri,
     isAppUnderConstruction: effectiveIsUnderConstruction,
+    constructionModeActiveUntil: activeUntil, // Kembalikan activeUntil apa adanya jika tidak direset
   };
 }
 
@@ -482,6 +500,7 @@ export async function getPublicProfileSettings(): Promise<{
   profileImageUri?: string;
   cvDataUri?: string;
   isAppUnderConstruction: boolean;
+  constructionModeActiveUntil?: Date | null; 
 }> {
   console.log("getPublicProfileSettings: Mulai mengambil data pengaturan profil untuk halaman publik.");
   try {
@@ -490,7 +509,8 @@ export async function getPublicProfileSettings(): Promise<{
     return await getProfileSettingsDataInternal(db);
   } catch (error: any) {
     console.error("getPublicProfileSettings: Gagal mengambil data pengaturan profil:", error);
-    return { isAppUnderConstruction: false }; // Default jika ada error
+    // Default ke false dan null jika ada error saat pengambilan data
+    return { isAppUnderConstruction: false, constructionModeActiveUntil: null }; 
   }
 }
 
@@ -506,14 +526,14 @@ export async function refreshAdminActivityAction(): Promise<{ success: boolean; 
     const db = client.db();
     const profileSettingsCollection: Collection<ProfileSettingsDocument> = db.collection("profile_settings");
 
-    const newActiveUntil = new Date(Date.now() + 5 * 60 * 1000); // DRP: Perpanjang 5 menit dari sekarang
+    const newActiveUntil = new Date(Date.now() + 5 * 60 * 1000); // Perpanjang 5 menit dari sekarang
 
     await profileSettingsCollection.updateOne(
       {}, 
-      { $set: { constructionModeActiveUntil: newActiveUntil } }, // Heartbeat untuk DRP
+      { $set: { constructionModeActiveUntil: newActiveUntil } }, 
       { upsert: true } 
     );
-    // console.log("refreshAdminActivityAction: Admin activity refreshed, constructionModeActiveUntil updated.");
+    // console.log("refreshAdminActivityAction: Admin activity refreshed, constructionModeActiveUntil updated to:", newActiveUntil.toISOString());
     return { success: true };
   } catch (error: any) {
     console.error("refreshAdminActivityAction: Error refreshing admin activity:", error);

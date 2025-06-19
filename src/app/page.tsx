@@ -5,6 +5,9 @@ import type { MongoClient, ObjectId, Collection, Document } from 'mongodb';
 import UnderConstructionView from '@/app/under-construction-view';
 import { getPublicProfileSettings } from '@/app/admin/profile/actions'; // Updated import
 
+// Ensure this page is dynamically rendered on every request
+export const dynamic = 'force-dynamic';
+
 // Interface untuk dokumen proyek dari database
 interface ProjectDocument {
   _id: ObjectId;
@@ -102,11 +105,11 @@ export default async function PortfolioPage() {
   const [
     fetchedProjects, 
     fetchedSkills, 
-    profileSettings // Sekarang berisi isAppUnderConstruction yang sudah dikoreksi jika perlu
+    profileSettings
   ] = await Promise.all([
     getProjects(),
     getSkills(),
-    getPublicProfileSettings() // Menggunakan fungsi baru yang menangani logika kedaluwarsa
+    getPublicProfileSettings()
   ]);
 
   if (profileSettings.isAppUnderConstruction) {
