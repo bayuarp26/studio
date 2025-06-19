@@ -61,7 +61,10 @@ export default function AdminActivityManager({ children }: AdminActivityManagerP
     }
 
     dialogDisplayTimerRef.current = setTimeout(() => {
-      const isAnotherModalOpen = !!document.querySelector('[role="dialog"][aria-modal="true"][open], [data-radix-dialog-content][aria-modal="true"]');
+      // Perbaikan selector: Lebih spesifik untuk Radix components yang menggunakan data-state="open"
+      const isAnotherModalOpen = !!document.querySelector(
+        '[data-radix-alert-dialog-content][data-state="open"], [data-radix-dialog-content][data-state="open"]'
+      );
       if (!isAnotherModalOpen) {
         setIsInactiveDialogOpen(true);
       } else {
@@ -103,7 +106,7 @@ export default function AdminActivityManager({ children }: AdminActivityManagerP
     <>
       {children}
       <AlertDialog open={isInactiveDialogOpen} onOpenChange={(open) => {
-        if (!open && isInactiveDialogOpen) { // If dialog is closed by clicking outside or ESC
+        if (!open && isInactiveDialogOpen) { 
             handleStayLoggedIn();
         }
         setIsInactiveDialogOpen(open);
