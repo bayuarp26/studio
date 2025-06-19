@@ -17,8 +17,8 @@ import { Button } from '@/components/ui/button';
 import { LogOut, CheckCircle } from 'lucide-react';
 import AdminStopwatch from './admin-stopwatch'; // Impor stopwatch
 
-const DIALOG_DISPLAY_TIMEOUT = 2 * 60 * 1000; // 2 menit untuk menampilkan dialog
-const FORCE_LOGOUT_TIMEOUT = 5 * 60 * 1000;   // 5 menit total inaktivitas untuk force logout
+const DIALOG_DISPLAY_TIMEOUT = 15 * 1000; // 15 detik untuk menampilkan dialog (TESTING)
+const FORCE_LOGOUT_TIMEOUT = 30 * 1000;   // 30 detik total inaktivitas untuk force logout (TESTING)
 
 interface AdminActivityManagerProps {
   children: React.ReactNode;
@@ -71,6 +71,10 @@ export default function AdminActivityManager({ children }: AdminActivityManagerP
       if (!isAnotherModalOpen) {
         setIsInactiveDialogOpen(true);
       } else {
+        // Jika ada dialog lain terbuka, coba reset lagi setelah beberapa saat
+        // untuk memberi kesempatan dialog lain ditutup.
+        // Ini adalah penyesuaian untuk kasus di mana dialog lain terbuka saat timer dialog inaktivitas selesai.
+        console.log("AdminActivityManager: Dialog lain terbuka, mencoba reset timer inaktivitas nanti.");
         resetTimers(); 
       }
     }, DIALOG_DISPLAY_TIMEOUT);
@@ -81,7 +85,7 @@ export default function AdminActivityManager({ children }: AdminActivityManagerP
   }, [isInactiveDialogOpen, performForceLogout]);
 
   useEffect(() => {
-    const events = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart']; // Tambahkan 'touchstart' untuk mobile
+    const events = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart']; 
     const handleActivity = () => {
       resetTimers();
     };
@@ -111,15 +115,18 @@ export default function AdminActivityManager({ children }: AdminActivityManagerP
       <AdminStopwatch resetKey={stopwatchResetKey} />
       <AlertDialog open={isInactiveDialogOpen} onOpenChange={(open) => {
         if (!open && isInactiveDialogOpen) { 
+            // Jika dialog ditutup (misalnya dengan tombol ESC atau klik di luar),
+            // anggap pengguna ingin tetap login
             handleStayLoggedIn();
         }
-        setIsInactiveDialogOpen(open);
+        // Untuk mencegah dialog langsung tertutup jika isInactiveDialogOpen sudah false
+        // setIsInactiveDialogOpen(open); 
       }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Sesi Akan Segera Berakhir?</AlertDialogTitle>
             <AlertDialogDescription>
-              Anda tidak melakukan aktivitas selama beberapa waktu. Apakah Anda ingin tetap login? Sesi akan berakhir otomatis setelah 5 menit total inaktivitas.
+              Anda tidak melakukan aktivitas selama beberapa waktu. Apakah Anda ingin tetap login? Sesi akan berakhir otomatis setelah {FORCE_LOGOUT_TIMEOUT / 1000} detik total inaktivitas.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
