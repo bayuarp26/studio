@@ -5,26 +5,21 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import clientPromise from "@/lib/mongodb";
 import type { MongoClient, Collection, Document, ObjectId } from 'mongodb';
-// fs dan path sudah tidak diperlukan karena CV disimpan sebagai Data URI
 import type { SkillData } from "@/app/page";
 import { cookies } from "next/headers";
 import { hashPassword, comparePassword } from "@/lib/authUtils";
 
 const ADMIN_AUTH_COOKIE_NAME = 'admin-auth-token';
 
-// Skema untuk validasi Data URI gambar
 const heroImageDataUriSchema = z.string().refine(val => val.startsWith('data:image/'), {
   message: "URL Gambar harus berupa Data URI yang valid (diawali dengan 'data:image/').",
 });
 
-// Skema untuk validasi nama keahlian
 const skillNameSchema = z.string().min(2, { message: "Nama keahlian minimal 2 karakter." });
 
-// Konstanta untuk validasi file CV
 const MAX_CV_SIZE = 2 * 1024 * 1024; // 2MB
 const ACCEPTED_CV_TYPES = ["application/pdf"];
 
-// Skema untuk validasi file CV (sebelum konversi ke Data URI)
 const cvFileSchema = z.instanceof(File)
   .refine((file) => file.size <= MAX_CV_SIZE, `Ukuran file CV maksimal ${MAX_CV_SIZE / (1024*1024)}MB.`)
   .refine(
@@ -32,13 +27,10 @@ const cvFileSchema = z.instanceof(File)
     "Format file CV tidak valid. Harap unggah file PDF."
   );
 
-// Skema untuk validasi Data URI CV PDF
 const cvDataUriSchema = z.string().refine(val => val.startsWith('data:application/pdf;base64,'), {
   message: "CV harus berupa Data URI PDF yang valid.",
 });
 
-
-// Skema untuk validasi kredensial admin
 const adminCredentialsSchema = z.object({
   currentPassword: z.string().min(1, "Password saat ini tidak boleh kosong."),
   newUsername: z.string().min(3, "Username baru minimal 3 karakter.").optional().or(z.literal('')),
@@ -48,19 +40,18 @@ const adminCredentialsSchema = z.object({
     path: ["newUsername"] 
 });
 
-// Interface untuk dokumen pengguna admin di database
 interface AdminUserDocument extends Document {
   _id: ObjectId;
   username: string;
   hashedPassword?: string;
 }
 
-// Interface untuk dokumen pengaturan profil di database
 interface ProfileSettingsDocument extends Document {
   _id?: ObjectId;
   profileImageUri?: string;
   cvDataUri?: string;
-  isAppUnderConstruction?: boolean; // Ditambahkan field untuk mode "under construction"
+  isAppUnderConstruction?: boolean;
+  constructionModeActiveUntil?: Date | null; // Added field for construction mode expiry
 }
 
 
@@ -350,19 +341,18 @@ export async function updateAdminCredentialsAction(
     cookies().delete(ADMIN_AUTH_COOKIE_NAME);
     console.log("updateAdminCredentialsAction: Cookie sesi admin dihapus (logout).");
 
-    // After successful credential update and logout, set isAppUnderConstruction to false
     const profileSettingsCollection: Collection<ProfileSettingsDocument> = db.collection("profile_settings");
     await profileSettingsCollection.updateOne(
       {},
-      { $set: { isAppUnderConstruction: false } },
-      { upsert: true } // Ensure the document exists
+      { $set: { isAppUnderConstruction: false, constructionModeActiveUntil: null } },
+      { upsert: true } 
     );
-    console.log("updateAdminCredentialsAction: Mode 'isAppUnderConstruction' dinonaktifkan setelah perubahan kredensial.");
+    console.log("updateAdminCredentialsAction: Mode 'isAppUnderConstruction' dinonaktifkan dan 'constructionModeActiveUntil' dihapus setelah perubahan kredensial.");
 
 
     revalidatePath("/admin/profile");
     revalidatePath("/login");
-    revalidatePath("/"); // Revalidate main page as well
+    revalidatePath("/"); 
     console.log("updateAdminCredentialsAction: Path direvalidasi. Proses selesai.");
     return { success: true };
 
@@ -376,38 +366,33 @@ export async function logoutAction(): Promise<{ success: boolean }> {
   console.log("logoutAction: Mulai proses logout.");
   cookies().delete(ADMIN_AUTH_COOKIE_NAME);
 
-  // Set global "under construction" mode to false
   try {
     const client: MongoClient = await clientPromise;
     const db = client.db();
     const profileSettingsCollection: Collection<ProfileSettingsDocument> = db.collection("profile_settings");
     await profileSettingsCollection.updateOne(
-      {}, // Update the single settings document
-      { $set: { isAppUnderConstruction: false } },
-      { upsert: true } // Create if it doesn't exist, though it should by now
+      {}, 
+      { $set: { isAppUnderConstruction: false, constructionModeActiveUntil: null } },
+      { upsert: true } 
     );
-    console.log("logoutAction: Mode 'isAppUnderConstruction' dinonaktifkan.");
+    console.log("logoutAction: Mode 'isAppUnderConstruction' dinonaktifkan dan 'constructionModeActiveUntil' dihapus.");
   } catch (dbError) {
-    console.error("logoutAction: Gagal menonaktifkan mode 'isAppUnderConstruction' di DB:", dbError);
-    // Lanjutkan proses logout meskipun ada error DB, karena cookie sudah dihapus
+    console.error("logoutAction: Gagal menonaktifkan mode 'isAppUnderConstruction' atau menghapus 'constructionModeActiveUntil' di DB:", dbError);
   }
 
   revalidatePath("/login");
   revalidatePath("/admin/profile");
-  revalidatePath("/"); // Revalidate main page
+  revalidatePath("/"); 
   console.log("logoutAction: Cookie sesi admin dihapus dan path direvalidasi. Logout berhasil.");
   return { success: true };
 }
 
-// Interface untuk data awal yang dibutuhkan halaman profil admin
 export interface AdminProfileInitialData {
   skills: SkillData[];
   currentHeroImageUrl: string;
   currentCvUrl: string; 
-  // isAppUnderConstruction might be useful here for admin to see status, but not critical for this request
 }
 
-// Fungsi untuk mengambil data awal untuk halaman profil admin
 export async function getAdminProfileInitialData(): Promise<{ success: boolean; data?: AdminProfileInitialData; error?: string }> {
   console.log("getAdminProfileInitialData: Mulai mengambil data awal profil admin.");
   try {
@@ -419,28 +404,19 @@ export async function getAdminProfileInitialData(): Promise<{ success: boolean; 
     const mappedSkills = skills.map(s => ({ ...s, _id: s._id.toString() }));
     console.log(`getAdminProfileInitialData: ${mappedSkills.length} skill ditemukan.`);
 
-    const profileSettingsCollection = db.collection<ProfileSettingsDocument>("profile_settings");
-    const profileSettings = await profileSettingsCollection.findOne({});
-    console.log("getAdminProfileInitialData: Pengaturan profil diambil:", profileSettings ? "Ada data" : "Tidak ada data/kosong");
+    // Menggunakan getProfileSettingsData untuk konsistensi logika, meskipun hanya beberapa field yang dipakai di sini
+    const settingsResult = await getProfileSettingsDataInternal(db); // Panggil helper internal
 
     let currentHeroImageUrl = "https://placehold.co/240x240.png?text=Profile";
-    if (profileSettings && profileSettings.profileImageUri && profileSettings.profileImageUri.startsWith('data:image/')) {
-      currentHeroImageUrl = profileSettings.profileImageUri;
-      console.log("getAdminProfileInitialData: URI gambar profil dari DB digunakan.");
-    } else {
-      console.log("getAdminProfileInitialData: URI gambar profil dari DB tidak ada atau tidak valid, menggunakan placeholder.");
+    if (settingsResult.profileImageUri && settingsResult.profileImageUri.startsWith('data:image/')) {
+      currentHeroImageUrl = settingsResult.profileImageUri;
     }
 
     let currentCvDataUri = ""; 
-    if (profileSettings && profileSettings.cvDataUri && profileSettings.cvDataUri.startsWith('data:application/pdf;base64,')) {
-      currentCvDataUri = profileSettings.cvDataUri;
-      console.log(`getAdminProfileInitialData: Data URI CV dari DB digunakan.`);
-    } else {
-      console.log("getAdminProfileInitialData: Data URI CV dari DB tidak ada atau tidak valid, menggunakan string kosong.");
+    if (settingsResult.cvDataUri && settingsResult.cvDataUri.startsWith('data:application/pdf;base64,')) {
+      currentCvDataUri = settingsResult.cvDataUri;
     }
     
-    // Tidak perlu mengirim isAppUnderConstruction ke klien admin profil untuk permintaan saat ini
-
     console.log("getAdminProfileInitialData: Pengambilan data awal profil admin berhasil.");
     return {
       success: true,
@@ -457,4 +433,85 @@ export async function getAdminProfileInitialData(): Promise<{ success: boolean; 
   }
 }
 
+
+// Helper internal untuk getProfileSettingsData agar bisa dipanggil dari getAdminProfileInitialData tanpa circular dependency
+async function getProfileSettingsDataInternal(db: ReturnType<MongoClient['db']>): Promise<{
+  profileImageUri?: string;
+  cvDataUri?: string;
+  isAppUnderConstruction: boolean;
+  // constructionModeActiveUntil tidak perlu dikembalikan ke getAdminProfileInitialData secara eksplisit
+}> {
+  const profileSettingsCollection: Collection<ProfileSettingsDocument> = db.collection("profile_settings");
+  let settings = await profileSettingsCollection.findOne({});
+
+  let effectiveIsUnderConstruction = settings?.isAppUnderConstruction ?? false;
+  const activeUntil = settings?.constructionModeActiveUntil;
+
+  if (effectiveIsUnderConstruction && activeUntil && new Date(activeUntil) < new Date()) {
+    console.log("getProfileSettingsDataInternal: Construction mode expired. Setting to false in DB.");
+    effectiveIsUnderConstruction = false;
+    await profileSettingsCollection.updateOne(
+      {},
+      { $set: { isAppUnderConstruction: false, constructionModeActiveUntil: null } },
+      { upsert: true }
+    );
+    // Optional: re-fetch settings if other parts of this internal function depend on it
+    // settings = await profileSettingsCollection.findOne({}); 
+  }
+
+  return {
+    profileImageUri: settings?.profileImageUri,
+    cvDataUri: settings?.cvDataUri,
+    isAppUnderConstruction: effectiveIsUnderConstruction,
+  };
+}
+
+
+// Fungsi yang diekspor untuk src/app/page.tsx
+export async function getPublicProfileSettings(): Promise<{
+  profileImageUri?: string;
+  cvDataUri?: string;
+  isAppUnderConstruction: boolean;
+}> {
+  console.log("getPublicProfileSettings: Mulai mengambil data pengaturan profil untuk halaman publik.");
+  try {
+    const client: MongoClient = await clientPromise;
+    const db = client.db();
+    return await getProfileSettingsDataInternal(db);
+  } catch (error: any) {
+    console.error("getPublicProfileSettings: Gagal mengambil data pengaturan profil:", error);
+    // Default ke mode tidak "under construction" jika ada error
+    return { isAppUnderConstruction: false };
+  }
+}
+
+
+export async function refreshAdminActivityAction(): Promise<{ success: boolean; error?: string }> {
+  const tokenCookie = cookies().get(ADMIN_AUTH_COOKIE_NAME);
+  if (!tokenCookie) {
+    // Sebenarnya, AdminActivityManager seharusnya tidak memanggil ini jika tidak terautentikasi,
+    // tapi sebagai pengaman tambahan.
+    return { success: false, error: "Tidak terautentikasi." };
+  }
+  // Verifikasi token bisa ditambahkan di sini untuk keamanan ekstra jika diperlukan
+
+  try {
+    const client: MongoClient = await clientPromise;
+    const db = client.db();
+    const profileSettingsCollection: Collection<ProfileSettingsDocument> = db.collection("profile_settings");
+
+    const newActiveUntil = new Date(Date.now() + 5 * 60 * 1000); // Perpanjang 5 menit dari sekarang
+
+    await profileSettingsCollection.updateOne(
+      {}, 
+      { $set: { constructionModeActiveUntil: newActiveUntil } },
+      { upsert: true } 
+    );
+    // console.log("refreshAdminActivityAction: Admin activity refreshed, constructionModeActiveUntil updated.");
+    return { success: true };
+  } catch (error: any) {
+    console.error("refreshAdminActivityAction: Error refreshing admin activity:", error);
+    return { success: false, error: "Gagal menyegarkan timestamp aktivitas admin." };
+  }
+}
     

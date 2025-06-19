@@ -25,6 +25,7 @@ interface AdminUserDocument extends Document {
 // Interface untuk dokumen pengaturan profil, hanya untuk field yang diupdate di sini
 interface ProfileSettingsUpdate {
   isAppUnderConstruction: boolean;
+  constructionModeActiveUntil: Date | null;
 }
 
 
@@ -52,7 +53,7 @@ export async function loginAction(
     const client: MongoClient = await clientPromise;
     const db = client.db();
     const adminUsersCollection: Collection<AdminUserDocument> = db.collection("admin_users");
-    const profileSettingsCollection: Collection<Document> = db.collection("profile_settings"); // Using Document for flexibility here
+    const profileSettingsCollection: Collection<Document> = db.collection("profile_settings"); 
     console.timeEnd("loginAction_dbConnection");
 
     console.time("loginAction_findUser");
@@ -74,7 +75,7 @@ export async function loginAction(
             const result = await adminUsersCollection.insertOne({
               username: initialAdminUsername,
               hashedPassword: hashedPassword,
-            } as AdminUserDocument); // Cast to ensure type compatibility if AdminUserDocument is more specific
+            } as AdminUserDocument); 
             console.timeEnd("loginAction_initialUser_insert");
 
              const insertedId = result.insertedId;
@@ -101,7 +102,6 @@ export async function loginAction(
       }
     }
 
-    // Legacy password migration logic
     if (adminUser && adminUser.password && !adminUser.hashedPassword) {
       const isLegacyPasswordMatch = (password === adminUser.password);
       if(isLegacyPasswordMatch) {
@@ -116,11 +116,11 @@ export async function loginAction(
             $set: {
               hashedPassword: newHashedPassword,
             },
-            $unset: { password: "" } // Remove the old plain password field
+            $unset: { password: "" } 
           }
         );
         console.timeEnd("loginAction_legacyMigration_update");
-        adminUser.hashedPassword = newHashedPassword; // Update in-memory user object
+        adminUser.hashedPassword = newHashedPassword; 
       } else {
         console.timeEnd("loginAction_total");
         return { success: false, error: "Username atau password salah." };
@@ -128,7 +128,6 @@ export async function loginAction(
     }
 
     if (!adminUser || !adminUser.hashedPassword) {
-        // This case should ideally not be reached if initial user creation or migration is successful
         console.timeEnd("loginAction_total");
         return { success: false, error: "Konfigurasi akun admin tidak lengkap atau username salah." };
     }
@@ -156,22 +155,20 @@ export async function loginAction(
     });
     console.timeEnd("loginAction_setCookie");
 
-    // Set global "under construction" mode
     console.time("loginAction_setUnderConstructionMode");
     try {
+        const fiveMinutesFromNow = new Date(Date.now() + 5 * 60 * 1000);
         await profileSettingsCollection.updateOne(
-          {}, // Update the single settings document, or create if it doesn't exist
-          { $set: { isAppUnderConstruction: true } },
+          {}, 
+          { $set: { isAppUnderConstruction: true, constructionModeActiveUntil: fiveMinutesFromNow } },
           { upsert: true }
         );
-        console.log("loginAction: Mode 'isAppUnderConstruction' diaktifkan.");
+        console.log("loginAction: Mode 'isAppUnderConstruction' diaktifkan dan 'constructionModeActiveUntil' diset.");
     } catch (dbError) {
         console.error("loginAction: Gagal mengaktifkan mode 'isAppUnderConstruction' di DB:", dbError);
-        // Decide if login should fail if this DB update fails. For now, proceeding.
     }
     console.timeEnd("loginAction_setUnderConstructionMode");
 
-    // Revalidate paths to reflect changes immediately
     revalidatePath('/'); 
     revalidatePath('/admin/profile'); 
     console.log("loginAction: Paths / and /admin/profile revalidated.");

@@ -3,6 +3,7 @@ import PortfolioContent from '@/app/portfolio-content';
 import clientPromise from '@/lib/mongodb';
 import type { MongoClient, ObjectId, Collection, Document } from 'mongodb';
 import UnderConstructionView from '@/app/under-construction-view';
+import { getPublicProfileSettings } from '@/app/admin/profile/actions'; // Updated import
 
 // Interface untuk dokumen proyek dari database
 interface ProjectDocument {
@@ -21,15 +22,6 @@ interface SkillDocument {
   _id: ObjectId;
   name: string;
 }
-
-// Interface untuk dokumen pengaturan profil dari database
-interface ProfileSettingsDocument extends Document {
-  _id?: ObjectId;
-  profileImageUri?: string;
-  cvDataUri?: string; 
-  isAppUnderConstruction?: boolean; // Ditambahkan field ini
-}
-
 
 // Interface untuk data proyek yang akan digunakan di komponen
 export interface ProjectData {
@@ -105,51 +97,22 @@ async function getSkills(): Promise<SkillData[]> {
   }
 }
 
-// Fungsi untuk mengambil data pengaturan profil (termasuk gambar profil, CV, dan status "under construction")
-async function getProfileSettingsData(): Promise<{
-  profileImageUri?: string;
-  cvDataUri?: string;
-  isAppUnderConstruction?: boolean;
-}> {
-  try {
-    const client: MongoClient = await clientPromise;
-    const db = client.db();
-    const profileSettingsCollection: Collection<ProfileSettingsDocument> = db.collection("profile_settings");
-    const settings = await profileSettingsCollection.findOne({});
-
-    if (settings) {
-      return {
-        profileImageUri: settings.profileImageUri,
-        cvDataUri: settings.cvDataUri,
-        isAppUnderConstruction: settings.isAppUnderConstruction ?? false, // Default ke false jika field tidak ada
-      };
-    }
-    return { isAppUnderConstruction: false }; // Default jika dokumen settings tidak ada
-  } catch (e) {
-    console.error("Failed to fetch profile settings data:", e);
-    return { isAppUnderConstruction: false }; // Default jika terjadi error
-  }
-}
-
 
 export default async function PortfolioPage() {
-  // Mengambil semua data yang diperlukan, termasuk status "under construction"
   const [
     fetchedProjects, 
     fetchedSkills, 
-    profileSettings
+    profileSettings // Sekarang berisi isAppUnderConstruction yang sudah dikoreksi jika perlu
   ] = await Promise.all([
     getProjects(),
     getSkills(),
-    getProfileSettingsData() // Fungsi ini sekarang juga mengembalikan isAppUnderConstruction
+    getPublicProfileSettings() // Menggunakan fungsi baru yang menangani logika kedaluwarsa
   ]);
 
-  // Jika mode "under construction" aktif, tampilkan halaman khusus
   if (profileSettings.isAppUnderConstruction) {
     return <UnderConstructionView />;
   }
 
-  // Jika tidak, lanjutkan menampilkan konten portofolio
   const heroPlaceholder = "https://placehold.co/240x240.png";
   const aboutPlaceholder = "https://placehold.co/320x400.png";
   
@@ -193,4 +156,3 @@ export default async function PortfolioPage() {
 
   return <PortfolioContent portfolioData={portfolioData} />;
 }
-

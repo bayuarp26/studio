@@ -4,7 +4,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { logoutAction } from '@/app/admin/profile/actions';
+import { logoutAction, refreshAdminActivityAction } from '@/app/admin/profile/actions';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -19,6 +19,9 @@ import AdminStopwatch from './admin-stopwatch';
 
 const DIALOG_DISPLAY_TIMEOUT = 2 * 60 * 1000; // 2 menit
 const FORCE_LOGOUT_TIMEOUT = 3 * 60 * 1000;   // 3 menit
+// const DIALOG_DISPLAY_TIMEOUT = 15 * 1000; // 15 detik - UNTUK TES
+// const FORCE_LOGOUT_TIMEOUT = 30 * 1000;   // 30 detik - UNTUK TES
+
 
 interface AdminActivityManagerProps {
   children: React.ReactNode;
@@ -58,14 +61,26 @@ export default function AdminActivityManager({ children }: AdminActivityManagerP
   }, [router, toast, isInactiveDialogOpen]);
 
 
-  const resetTimers = useCallback(() => {
+  const resetTimers = useCallback(async () => {
     if (dialogDisplayTimerRef.current) clearTimeout(dialogDisplayTimerRef.current);
     if (forceLogoutTimerRef.current) clearTimeout(forceLogoutTimerRef.current);
     
     setStopwatchResetKey(Date.now());
 
+    // Refresh server-side activity timestamp
+    try {
+      const refreshResult = await refreshAdminActivityAction();
+      if (!refreshResult.success) {
+        console.warn("AdminActivityManager: Failed to refresh admin activity timestamp:", refreshResult.error);
+        // Potentially show a non-critical toast to the admin
+      }
+    } catch (e) {
+        console.error("AdminActivityManager: Error calling refreshAdminActivityAction", e);
+    }
+
+
     dialogDisplayTimerRef.current = setTimeout(() => {
-      // Jika dialog inaktivitas belum terbuka, coba buka.
+      // Selalu coba buka dialog jika timer ini selesai, kecuali dialognya sudah terbuka
       if (!isInactiveDialogOpen) {
           setIsInactiveDialogOpen(true);
       }
@@ -99,6 +114,7 @@ export default function AdminActivityManager({ children }: AdminActivityManagerP
   }, [resetTimers]);
 
   const handleManualLogout = useCallback(() => {
+    // Tidak perlu setIsInactiveDialogOpen(false) di sini karena performForceLogout sudah menanganinya
     performForceLogout(false); 
   }, [performForceLogout]);
   
@@ -110,26 +126,25 @@ export default function AdminActivityManager({ children }: AdminActivityManagerP
       <AlertDialog 
         open={isInactiveDialogOpen} 
         onOpenChange={(openState) => {
-            if (!openState && isInactiveDialogOpen) {
-                // Jika dialog akan ditutup oleh pengguna (ESC atau klik overlay)
-                handleStayLoggedIn();
-            }
-            // Tidak mengatur setIsInactiveDialogOpen(openState) di sini secara langsung
-            // karena kita ingin kontrol yang lebih ketat: dialog hanya dibuka oleh timer
-            // dan ditutup oleh aksi pengguna atau logout otomatis.
-            // Namun, jika onOpenChange *harus* mengontrol state secara penuh:
-            // setIsInactiveDialogOpen(openState); 
-            // Jika openState adalah false, dan isInactiveDialogOpen adalah true,
-            // itu berarti pengguna menutupnya, jadi kita panggil handleStayLoggedIn.
+          // Jika dialog akan ditutup (openState menjadi false)
+          // dan dialog sebelumnya memang terbuka (isInactiveDialogOpen adalah true),
+          // dan penutupan BUKAN karena logout otomatis atau manual (yang akan mengubah isInactiveDialogOpen sendiri),
+          // maka anggap pengguna menutupnya (ESC/overlay) dan ingin tetap login.
+          if (!openState && isInactiveDialogOpen) {
+            // Pengecekan tambahan bisa dilakukan di sini jika ingin membedakan
+            // penutupan oleh tombol "Keluar" vs ESC/overlay,
+            // tapi saat ini kedua tombol di footer dialog secara eksplisit memanggil handler-nya.
+            // Jadi, jika onOpenChange dipanggil dengan openState=false dan kita tidak sedang dalam proses logout,
+            // itu berarti ESC atau klik overlay.
+            handleStayLoggedIn();
+          }
+          // setIsInactiveDialogOpen(openState); // Biarkan state dikontrol oleh timer dan aksi tombol
         }}
       >
         <AlertDialogContent 
           onEscapeKeyDown={handleStayLoggedIn} 
           onPointerDownOutside={(e) => {
-            // Radix Dialog menutup dialog pada pointer down di luar.
-            // Jika pointer down terjadi di luar, kita anggap sebagai "stay logged in".
-            // Periksa target untuk memastikan itu bukan bagian dari trigger lain yang mungkin ada.
-            if (e.target === e.currentTarget) { // Hanya jika klik langsung pada overlay
+            if (e.target === e.currentTarget) {
                 handleStayLoggedIn();
             }
           }}
