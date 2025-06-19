@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from '@/components/ui/button';
 import { LogOut, CheckCircle } from 'lucide-react';
+import AdminStopwatch from './admin-stopwatch'; // Impor stopwatch
 
 const DIALOG_DISPLAY_TIMEOUT = 2 * 60 * 1000; // 2 menit untuk menampilkan dialog
 const FORCE_LOGOUT_TIMEOUT = 5 * 60 * 1000;   // 5 menit total inaktivitas untuk force logout
@@ -27,6 +28,7 @@ export default function AdminActivityManager({ children }: AdminActivityManagerP
   const [isInactiveDialogOpen, setIsInactiveDialogOpen] = useState(false);
   const dialogDisplayTimerRef = useRef<NodeJS.Timeout | null>(null);
   const forceLogoutTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [stopwatchResetKey, setStopwatchResetKey] = useState(Date.now()); // State untuk mereset stopwatch
   
   const router = useRouter();
   const { toast } = useToast();
@@ -59,31 +61,32 @@ export default function AdminActivityManager({ children }: AdminActivityManagerP
     if (isInactiveDialogOpen) {
         setIsInactiveDialogOpen(false);
     }
+    
+    setStopwatchResetKey(Date.now()); // Update reset key untuk stopwatch
 
     dialogDisplayTimerRef.current = setTimeout(() => {
-      // Perbaikan selector: Lebih spesifik untuk Radix components yang menggunakan data-state="open"
       const isAnotherModalOpen = !!document.querySelector(
         '[data-radix-alert-dialog-content][data-state="open"], [data-radix-dialog-content][data-state="open"]'
       );
       if (!isAnotherModalOpen) {
         setIsInactiveDialogOpen(true);
       } else {
-        resetTimers(); // Snooze if another modal is open
+        resetTimers(); 
       }
     }, DIALOG_DISPLAY_TIMEOUT);
 
     forceLogoutTimerRef.current = setTimeout(() => {
-      performForceLogout(true); // true for auto-logout
+      performForceLogout(true); 
     }, FORCE_LOGOUT_TIMEOUT);
   }, [isInactiveDialogOpen, performForceLogout]);
 
   useEffect(() => {
-    const events = ['mousemove', 'keydown', 'click', 'scroll'];
+    const events = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart']; // Tambahkan 'touchstart' untuk mobile
     const handleActivity = () => {
       resetTimers();
     };
 
-    events.forEach(event => window.addEventListener(event, handleActivity));
+    events.forEach(event => window.addEventListener(event, handleActivity, { passive: true }));
     resetTimers(); 
 
     return () => {
@@ -94,7 +97,7 @@ export default function AdminActivityManager({ children }: AdminActivityManagerP
   }, [resetTimers]);
 
   const handleManualLogout = () => {
-    performForceLogout(false); // false for manual logout
+    performForceLogout(false); 
   };
 
   const handleStayLoggedIn = () => {
@@ -105,6 +108,7 @@ export default function AdminActivityManager({ children }: AdminActivityManagerP
   return (
     <>
       {children}
+      <AdminStopwatch resetKey={stopwatchResetKey} />
       <AlertDialog open={isInactiveDialogOpen} onOpenChange={(open) => {
         if (!open && isInactiveDialogOpen) { 
             handleStayLoggedIn();
