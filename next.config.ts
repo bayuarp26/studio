@@ -31,8 +31,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // bcryptjs adalah murni JavaScript, jadi tidak perlu diexternalize
-  serverComponentsExternalPackages: [], 
 };
 
 export default nextConfig;
