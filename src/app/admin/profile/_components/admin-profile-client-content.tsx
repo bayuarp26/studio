@@ -16,6 +16,7 @@ import type { AdminProfileInitialData as AdminProfilePageData } from "../actions
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState } from 'react';
+import PostActionDialog from '@/components/admin/post-action-dialog'; // Import PostActionDialog
 
 interface AdminProfileClientContentProps {
   initialData: AdminProfilePageData | null;
@@ -26,6 +27,9 @@ export default function AdminProfileClientContent({ initialData, serverError }: 
   const router = useRouter();
   const { toast } = useToast();
   const [data, setData] = useState<AdminProfilePageData | null>(initialData);
+  const [isPostActionDialogOpen, setIsPostActionDialogOpen] = useState(false);
+  const [postActionDialogTitle, setPostActionDialogTitle] = useState("Tindakan Berhasil");
+  const [postActionDialogDescription, setPostActionDialogDescription] = useState("Perubahan telah disimpan. Apa yang ingin Anda lakukan selanjutnya?");
 
   useEffect(() => {
     setData(initialData);
@@ -41,8 +45,8 @@ export default function AdminProfileClientContent({ initialData, serverError }: 
     }
   }, [serverError, toast]);
 
-
   const handleLogout = async () => {
+    setIsPostActionDialogOpen(false); // Pastikan dialog ditutup sebelum logout
     const result = await logoutAction();
     if (result.success) {
       toast({
@@ -58,6 +62,13 @@ export default function AdminProfileClientContent({ initialData, serverError }: 
       });
     }
   };
+
+  const openSuccessDialog = (title?: string, description?: string) => {
+    setPostActionDialogTitle(title || "Tindakan Berhasil");
+    setPostActionDialogDescription(description || "Perubahan telah disimpan. Apa yang ingin Anda lakukan selanjutnya?");
+    setIsPostActionDialogOpen(true);
+  };
+
 
   if (!data && !serverError) {
     return (
@@ -88,96 +99,117 @@ export default function AdminProfileClientContent({ initialData, serverError }: 
 
 
   return (
-    <SectionContainer id="admin-profile" className="bg-background min-h-screen pt-24 md:pt-32">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10">
-        <h1 className="section-title mb-4 sm:mb-0">Pengaturan Admin</h1>
-        <div className="flex flex-wrap gap-2">
-          <Button asChild variant="outline">
-            <Link href="/admin/add-project">
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Tambah Proyek
-            </Link>
-          </Button>
-          <Button asChild variant="outline">
-            <Link href="/admin/projects">
-              <ListOrdered className="mr-2 h-4 w-4" />
-              Kelola Proyek
-            </Link>
-          </Button>
-          <Button asChild variant="outline">
-            <Link href="/">
-              <Home className="mr-2 h-4 w-4" />
-              Halaman Utama
-            </Link>
-          </Button>
-          <Button variant="destructive" onClick={handleLogout}>
-            <LogOut className="mr-2 h-4 w-4" />
-            Logout
-          </Button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div> {/* Removed perspective wrapper */}
-          <Card className="shadow-lg h-full transition-shadow hover:shadow-md">  {/* Removed 3D hover classes */}
-            <CardHeader>
-              <CardTitle className="flex items-center text-primary">
-                <ImageUp className="mr-2 h-5 w-5" />
-                Ganti Foto Profil
-              </CardTitle>
-              <CardDescription>Unggah foto profil baru. Foto di halaman utama dan "Tentang Saya" akan diganti.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <UpdateProfileImageForm currentImageUrl={data.currentHeroImageUrl} />
-            </CardContent>
-          </Card>
+    <>
+      <SectionContainer id="admin-profile" className="bg-background min-h-screen pt-24 md:pt-32">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10">
+          <h1 className="section-title mb-4 sm:mb-0">Pengaturan Admin</h1>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline">
+              <Link href="/admin/add-project">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Tambah Proyek
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/admin/projects">
+                <ListOrdered className="mr-2 h-4 w-4" />
+                Kelola Proyek
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/">
+                <Home className="mr-2 h-4 w-4" />
+                Halaman Utama
+              </Link>
+            </Button>
+            <Button variant="destructive" onClick={handleLogout}>
+              <LogOut className="mr-2 h-4 w-4" />
+              Logout
+            </Button>
+          </div>
         </div>
 
-        <div> {/* Removed perspective wrapper */}
-          <Card className="shadow-lg h-full transition-shadow hover:shadow-md"> {/* Removed 3D hover classes */}
-            <CardHeader>
-              <CardTitle className="flex items-center text-primary">
-                <UserCog className="mr-2 h-5 w-5" />
-                Kelola Keahlian Utama
-              </CardTitle>
-              <CardDescription>Tambah atau hapus keahlian yang ditampilkan di halaman utama.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ManageSkillsSection initialSkills={data.skills} />
-            </CardContent>
-          </Card>
-        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div>
+            <Card className="shadow-lg h-full transition-shadow hover:shadow-md">
+              <CardHeader>
+                <CardTitle className="flex items-center text-primary">
+                  <ImageUp className="mr-2 h-5 w-5" />
+                  Ganti Foto Profil
+                </CardTitle>
+                <CardDescription>Unggah foto profil baru. Foto di halaman utama dan "Tentang Saya" akan diganti.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <UpdateProfileImageForm 
+                  currentImageUrl={data.currentHeroImageUrl} 
+                  onSuccessAction={() => openSuccessDialog("Foto Profil Diperbarui", "Foto profil Anda berhasil diperbarui.")}
+                />
+              </CardContent>
+            </Card>
+          </div>
 
-        <div> {/* Removed perspective wrapper */}
-          <Card className="shadow-lg h-full transition-shadow hover:shadow-md"> {/* Removed 3D hover classes */}
-            <CardHeader>
-              <CardTitle className="flex items-center text-primary">
-                <FileText className="mr-2 h-5 w-5" />
-                Ganti File CV
-              </CardTitle>
-              <CardDescription>Unggah file CV baru dalam format PDF. File saat ini akan diganti.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <UpdateCVForm currentCvUrl={data.currentCvUrl} />
-            </CardContent>
-          </Card>
-        </div>
+          <div>
+            <Card className="shadow-lg h-full transition-shadow hover:shadow-md">
+              <CardHeader>
+                <CardTitle className="flex items-center text-primary">
+                  <UserCog className="mr-2 h-5 w-5" />
+                  Kelola Keahlian Utama
+                </CardTitle>
+                <CardDescription>Tambah atau hapus keahlian yang ditampilkan di halaman utama.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ManageSkillsSection 
+                  initialSkills={data.skills} 
+                  onAddSkillSuccess={() => openSuccessDialog("Keahlian Ditambahkan", "Keahlian baru berhasil ditambahkan.")}
+                  // Untuk delete, biasanya cukup toast, tidak perlu dialog "lanjutkan mengedit"
+                />
+              </CardContent>
+            </Card>
+          </div>
 
-        <div> {/* Removed perspective wrapper */}
-          <Card className="shadow-lg h-full transition-shadow hover:shadow-md"> {/* Removed 3D hover classes */}
-            <CardHeader>
-              <CardTitle className="flex items-center text-primary">
-                <KeyRound className="mr-2 h-5 w-5" />
-                Ubah Kredensial Admin
-              </CardTitle>
-              <CardDescription>Ganti username atau password untuk login admin.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <UpdateAdminCredentialsForm />
-            </CardContent>
-          </Card>
+          <div>
+            <Card className="shadow-lg h-full transition-shadow hover:shadow-md">
+              <CardHeader>
+                <CardTitle className="flex items-center text-primary">
+                  <FileText className="mr-2 h-5 w-5" />
+                  Ganti File CV
+                </CardTitle>
+                <CardDescription>Unggah file CV baru dalam format PDF. File saat ini akan diganti.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <UpdateCVForm 
+                  currentCvUrl={data.currentCvUrl} 
+                  onSuccessAction={() => openSuccessDialog("File CV Diperbarui", "File CV Anda berhasil diperbarui.")}
+                />
+              </CardContent>
+            </Card>
+          </div>
+
+          <div>
+            <Card className="shadow-lg h-full transition-shadow hover:shadow-md">
+              <CardHeader>
+                <CardTitle className="flex items-center text-primary">
+                  <KeyRound className="mr-2 h-5 w-5" />
+                  Ubah Kredensial Admin
+                </CardTitle>
+                <CardDescription>Ganti username atau password untuk login admin.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <UpdateAdminCredentialsForm /> 
+                {/* Dialog post-action tidak cocok di sini karena akan otomatis logout */}
+              </CardContent>
+            </Card>
+          </div>
         </div>
-      </div>
-    </SectionContainer>
+      </SectionContainer>
+      <PostActionDialog
+        isOpen={isPostActionDialogOpen}
+        onOpenChange={setIsPostActionDialogOpen}
+        onConfirmLogout={handleLogout}
+        onContinueEditing={() => setIsPostActionDialogOpen(false)}
+        dialogTitle={postActionDialogTitle}
+        dialogDescription={postActionDialogDescription}
+      />
+    </>
   );
 }

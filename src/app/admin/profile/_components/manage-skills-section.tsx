@@ -42,9 +42,10 @@ type SkillFormValues = z.infer<typeof skillFormSchema>;
 
 interface ManageSkillsSectionProps {
   initialSkills: SkillData[];
+  onAddSkillSuccess: () => void; // Callback untuk memicu dialog
 }
 
-export default function ManageSkillsSection({ initialSkills }: ManageSkillsSectionProps) {
+export default function ManageSkillsSection({ initialSkills, onAddSkillSuccess }: ManageSkillsSectionProps) {
   const { toast } = useToast();
   const [skills, setSkills] = useState<SkillData[]>(initialSkills);
   const [isDeleting, setIsDeleting] = useState<string | null>(null); // skillId being deleted
@@ -69,6 +70,7 @@ export default function ManageSkillsSection({ initialSkills }: ManageSkillsSecti
         });
         setSkills(prevSkills => [...prevSkills, result.newSkill!].sort((a, b) => a.name.localeCompare(b.name)));
         form.reset();
+        onAddSkillSuccess(); // Panggil callback untuk menampilkan dialog
       } else {
         toast({
           variant: "destructive",
@@ -101,6 +103,7 @@ export default function ManageSkillsSection({ initialSkills }: ManageSkillsSecti
           description: `Keahlian "${skillToDelete.name}" telah berhasil dihapus.`,
         });
         setSkills(prevSkills => prevSkills.filter(s => s._id !== skillToDelete.id));
+        // Untuk delete, biasanya tidak perlu dialog "lanjutkan mengedit", cukup toast.
       } else {
         toast({
           variant: "destructive",

@@ -36,9 +36,10 @@ type CVFormValues = z.infer<typeof cvFormSchema>;
 
 interface UpdateCVFormProps {
   currentCvUrl: string; 
+  onSuccessAction: () => void; // Callback untuk memicu dialog
 }
 
-export default function UpdateCVForm({ currentCvUrl }: UpdateCVFormProps) {
+export default function UpdateCVForm({ currentCvUrl, onSuccessAction }: UpdateCVFormProps) {
   const { toast } = useToast();
   const [fileName, setFileName] = useState<string | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
@@ -100,6 +101,7 @@ export default function UpdateCVForm({ currentCvUrl }: UpdateCVFormProps) {
         setFileName(null);
         setFileError(null);
         setLocalCurrentCvUrl(result.newCvDataUri); 
+        onSuccessAction(); // Panggil callback untuk menampilkan dialog
       } else {
         toast({
           variant: "destructive",
@@ -117,7 +119,7 @@ export default function UpdateCVForm({ currentCvUrl }: UpdateCVFormProps) {
   }
 
   const handleDownloadCurrentCv = (event: React.MouseEvent<HTMLAnchorElement>) => {
-    event.preventDefault(); // Mencegah navigasi default jika href adalah Data URI
+    event.preventDefault(); 
     if (localCurrentCvUrl && localCurrentCvUrl.startsWith('data:application/pdf;base64,')) {
       downloadDataUri(localCurrentCvUrl, "Wahyu_Pratomo-cv.pdf");
     } else {
@@ -186,8 +188,8 @@ export default function UpdateCVForm({ currentCvUrl }: UpdateCVFormProps) {
          {localCurrentCvUrl && localCurrentCvUrl.startsWith('data:application/pdf;base64,') ? (
           <p className="text-sm text-muted-foreground mt-4 text-center">
             CV saat ini: <a 
-                          href={localCurrentCvUrl} // href tetap ada untuk aksesibilitas dasar
-                          onClick={handleDownloadCurrentCv} // onClick untuk download yang lebih robust
+                          href={localCurrentCvUrl} 
+                          onClick={handleDownloadCurrentCv} 
                           className="text-primary hover:underline cursor-pointer"
                         >
                           Unduh CV (tersimpan di database)

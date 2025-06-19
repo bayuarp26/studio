@@ -31,10 +31,11 @@ const profileImageFormSchema = z.object({
 type ProfileImageFormValues = z.infer<typeof profileImageFormSchema>;
 
 interface UpdateProfileImageFormProps {
-  currentImageUrl: string; // To display the initial image if needed, though direct update is complex
+  currentImageUrl: string;
+  onSuccessAction: () => void; // Callback untuk memicu dialog
 }
 
-export default function UpdateProfileImageForm({ currentImageUrl }: UpdateProfileImageFormProps) {
+export default function UpdateProfileImageForm({ currentImageUrl, onSuccessAction }: UpdateProfileImageFormProps) {
   const { toast } = useToast();
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -110,9 +111,7 @@ export default function UpdateProfileImageForm({ currentImageUrl }: UpdateProfil
         });
         form.reset();
         setImagePreview(null);
-        // Optionally, trigger a hard refresh or re-fetch for page.tsx if needed,
-        // though revalidatePath should handle most cases for subsequent visits.
-        // window.location.reload(); // Uncomment if immediate visual update on this admin page is critical
+        onSuccessAction(); // Panggil callback untuk menampilkan dialog
       } else {
         toast({
           variant: "destructive",
