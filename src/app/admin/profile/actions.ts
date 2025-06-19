@@ -56,11 +56,11 @@ interface AdminUserDocument extends Document {
 }
 
 // Interface untuk dokumen pengaturan profil di database
-// Dokumen ini akan disimpan dalam koleksi 'profile_settings' di dalam database default (misal: portofolioDB)
 interface ProfileSettingsDocument extends Document {
   _id?: ObjectId;
-  profileImageUri?: string; // Menyimpan Data URI dari gambar profil
-  cvDataUri?: string; // Menyimpan Data URI dari file CV
+  profileImageUri?: string;
+  cvDataUri?: string;
+  isAppUnderConstruction?: boolean; // Ditambahkan field untuk mode "under construction"
 }
 
 
@@ -69,7 +69,6 @@ export async function updateProfileImageAction(
 ): Promise<{ success: boolean; error?: string }> {
   console.log("updateProfileImageAction: Mulai proses.");
   try {
-    // Verifikasi sesi admin
     const tokenCookie = cookies().get(ADMIN_AUTH_COOKIE_NAME);
     if (!tokenCookie) {
       console.error("updateProfileImageAction: Error - Tidak terautentikasi.");
@@ -77,7 +76,6 @@ export async function updateProfileImageAction(
     }
     console.log("updateProfileImageAction: Sesi admin terverifikasi.");
 
-    // Validasi input imageDataUri
     const validationResult = heroImageDataUriSchema.safeParse(imageDataUri);
     if (!validationResult.success) {
       const firstError = Object.values(validationResult.error.flatten().fieldErrors)[0]?.[0];
@@ -88,8 +86,7 @@ export async function updateProfileImageAction(
     console.log("updateProfileImageAction: Validasi Data URI berhasil.");
 
     const client: MongoClient = await clientPromise;
-    const db = client.db(); // Menggunakan database default (misal: portofolioDB)
-    // Koleksi 'profile_settings' akan berada di dalam database default tersebut
+    const db = client.db(); 
     const profileSettingsCollection: Collection<ProfileSettingsDocument> = db.collection("profile_settings");
 
     console.log("updateProfileImageAction: Mencoba menyimpan URI gambar profil ke database.");
@@ -120,7 +117,6 @@ export async function addSkillAction(
 ): Promise<{ success: boolean; error?: string; newSkill?: SkillData }> {
   console.log(`addSkillAction: Mulai proses untuk skill "${name}".`);
   try {
-    // Verifikasi sesi admin
     const tokenCookie = cookies().get(ADMIN_AUTH_COOKIE_NAME);
     if (!tokenCookie) {
       console.error("addSkillAction: Error - Tidak terautentikasi.");
@@ -139,8 +135,7 @@ export async function addSkillAction(
     console.log("addSkillAction: Validasi nama skill berhasil.");
 
     const client: MongoClient = await clientPromise;
-    const db = client.db(); // Menggunakan database default (misal: portofolioDB)
-    // Koleksi 'skills' akan berada di dalam database default tersebut
+    const db = client.db(); 
     const skillsCollection: Collection<Document> = db.collection("skills");
 
     console.log(`addSkillAction: Mencari skill eksisting dengan nama "${validatedName}".`);
@@ -179,7 +174,6 @@ export async function deleteSkillAction(
   skillId: string
 ): Promise<{ success: boolean; error?: string }> {
   console.log(`deleteSkillAction: Mulai proses untuk skill ID "${skillId}".`);
-  // Verifikasi sesi admin
   const tokenCookie = cookies().get(ADMIN_AUTH_COOKIE_NAME);
   if (!tokenCookie) {
     console.error("deleteSkillAction: Error - Tidak terautentikasi.");
@@ -194,8 +188,7 @@ export async function deleteSkillAction(
 
   try {
     const client: MongoClient = await clientPromise;
-    const db = client.db(); // Menggunakan database default (misal: portofolioDB)
-    // Koleksi 'skills' akan berada di dalam database default tersebut
+    const db = client.db(); 
     const skillsCollection: Collection<Document> = db.collection("skills");
 
     const { ObjectId } = require('mongodb');
@@ -226,7 +219,6 @@ export async function updateCVAction(
 ): Promise<{ success: boolean; error?: string; newCvDataUri?: string }> {
   console.log("updateCVAction: Mulai proses pembaruan CV dengan Data URI.");
   try {
-    // Verifikasi sesi admin
     const tokenCookie = cookies().get(ADMIN_AUTH_COOKIE_NAME);
     if (!tokenCookie) {
       console.error("updateCVAction: Error - Tidak terautentikasi.");
@@ -242,7 +234,6 @@ export async function updateCVAction(
     }
     console.log(`updateCVAction: File CV diterima: ${cvFile.name}, Tipe: ${cvFile.type}, Ukuran: ${cvFile.size}`);
 
-    // Validasi file sebelum konversi ke Data URI
     const fileValidationResult = cvFileSchema.safeParse(cvFile);
     if (!fileValidationResult.success) {
       const firstError = fileValidationResult.error.flatten().formErrors[0];
@@ -251,14 +242,11 @@ export async function updateCVAction(
     }
     console.log("updateCVAction: Validasi file CV (sebelum Data URI) berhasil.");
 
-    // Konversi file ke Data URI
     const bytes = await cvFile.arrayBuffer();
     const buffer = Buffer.from(bytes);
     const cvDataUriString = `data:${cvFile.type};base64,${buffer.toString('base64')}`;
     console.log("updateCVAction: File CV berhasil dikonversi ke Data URI (potongan):", cvDataUriString.substring(0, 100) + "...");
 
-
-    // Validasi Data URI yang dihasilkan
     const dataUriValidationResult = cvDataUriSchema.safeParse(cvDataUriString);
     if (!dataUriValidationResult.success) {
       const firstError = dataUriValidationResult.error.flatten().formErrors[0];
@@ -268,17 +256,14 @@ export async function updateCVAction(
     const validatedCvDataUri = dataUriValidationResult.data;
     console.log("updateCVAction: Validasi Data URI CV berhasil.");
 
-
-    // Simpan Data URI CV ke database
     const client: MongoClient = await clientPromise;
-    const db = client.db(); // Menggunakan database default (misal: portofolioDB)
-    // Koleksi 'profile_settings' akan berada di dalam database default tersebut
+    const db = client.db(); 
     const profileSettingsCollection: Collection<ProfileSettingsDocument> = db.collection("profile_settings");
 
     console.log("updateCVAction: Mencoba menyimpan Data URI CV ke database.");
     await profileSettingsCollection.updateOne(
       {},
-      { $set: { cvDataUri: validatedCvDataUri } }, // Simpan Data URI
+      { $set: { cvDataUri: validatedCvDataUri } }, 
       { upsert: true }
     );
     console.log("updateCVAction: Data URI CV berhasil disimpan ke database.");
@@ -321,8 +306,7 @@ export async function updateAdminCredentialsAction(
     const { currentPassword, newUsername, newPassword } = validationResult.data;
 
     const client: MongoClient = await clientPromise;
-    const db = client.db(); // Menggunakan database default (misal: portofolioDB)
-    // Koleksi 'admin_users' akan berada di dalam database default tersebut
+    const db = client.db(); 
     const adminUsersCollection: Collection<AdminUserDocument> = db.collection("admin_users");
 
     console.log("updateAdminCredentialsAction: Mencari pengguna admin.");
@@ -366,8 +350,19 @@ export async function updateAdminCredentialsAction(
     cookies().delete(ADMIN_AUTH_COOKIE_NAME);
     console.log("updateAdminCredentialsAction: Cookie sesi admin dihapus (logout).");
 
+    // After successful credential update and logout, set isAppUnderConstruction to false
+    const profileSettingsCollection: Collection<ProfileSettingsDocument> = db.collection("profile_settings");
+    await profileSettingsCollection.updateOne(
+      {},
+      { $set: { isAppUnderConstruction: false } },
+      { upsert: true } // Ensure the document exists
+    );
+    console.log("updateAdminCredentialsAction: Mode 'isAppUnderConstruction' dinonaktifkan setelah perubahan kredensial.");
+
+
     revalidatePath("/admin/profile");
     revalidatePath("/login");
+    revalidatePath("/"); // Revalidate main page as well
     console.log("updateAdminCredentialsAction: Path direvalidasi. Proses selesai.");
     return { success: true };
 
@@ -380,9 +375,26 @@ export async function updateAdminCredentialsAction(
 export async function logoutAction(): Promise<{ success: boolean }> {
   console.log("logoutAction: Mulai proses logout.");
   cookies().delete(ADMIN_AUTH_COOKIE_NAME);
+
+  // Set global "under construction" mode to false
+  try {
+    const client: MongoClient = await clientPromise;
+    const db = client.db();
+    const profileSettingsCollection: Collection<ProfileSettingsDocument> = db.collection("profile_settings");
+    await profileSettingsCollection.updateOne(
+      {}, // Update the single settings document
+      { $set: { isAppUnderConstruction: false } },
+      { upsert: true } // Create if it doesn't exist, though it should by now
+    );
+    console.log("logoutAction: Mode 'isAppUnderConstruction' dinonaktifkan.");
+  } catch (dbError) {
+    console.error("logoutAction: Gagal menonaktifkan mode 'isAppUnderConstruction' di DB:", dbError);
+    // Lanjutkan proses logout meskipun ada error DB, karena cookie sudah dihapus
+  }
+
   revalidatePath("/login");
   revalidatePath("/admin/profile");
-  revalidatePath("/");
+  revalidatePath("/"); // Revalidate main page
   console.log("logoutAction: Cookie sesi admin dihapus dan path direvalidasi. Logout berhasil.");
   return { success: true };
 }
@@ -391,7 +403,8 @@ export async function logoutAction(): Promise<{ success: boolean }> {
 export interface AdminProfileInitialData {
   skills: SkillData[];
   currentHeroImageUrl: string;
-  currentCvUrl: string; // Ini akan berisi Data URI CV atau string kosong
+  currentCvUrl: string; 
+  // isAppUnderConstruction might be useful here for admin to see status, but not critical for this request
 }
 
 // Fungsi untuk mengambil data awal untuk halaman profil admin
@@ -399,15 +412,13 @@ export async function getAdminProfileInitialData(): Promise<{ success: boolean; 
   console.log("getAdminProfileInitialData: Mulai mengambil data awal profil admin.");
   try {
     const client: MongoClient = await clientPromise;
-    const db = client.db(); // Menggunakan database default (misal: portofolioDB)
+    const db = client.db(); 
 
-    // Koleksi 'skills' akan berada di dalam database default tersebut
     const skillsCollection = db.collection<SkillData>("skills");
     const skills = await skillsCollection.find({}).sort({ name: 1 }).toArray();
     const mappedSkills = skills.map(s => ({ ...s, _id: s._id.toString() }));
     console.log(`getAdminProfileInitialData: ${mappedSkills.length} skill ditemukan.`);
 
-    // Koleksi 'profile_settings' akan berada di dalam database default tersebut
     const profileSettingsCollection = db.collection<ProfileSettingsDocument>("profile_settings");
     const profileSettings = await profileSettingsCollection.findOne({});
     console.log("getAdminProfileInitialData: Pengaturan profil diambil:", profileSettings ? "Ada data" : "Tidak ada data/kosong");
@@ -420,13 +431,15 @@ export async function getAdminProfileInitialData(): Promise<{ success: boolean; 
       console.log("getAdminProfileInitialData: URI gambar profil dari DB tidak ada atau tidak valid, menggunakan placeholder.");
     }
 
-    let currentCvDataUri = ""; // Default ke string kosong jika tidak ada CV di DB
+    let currentCvDataUri = ""; 
     if (profileSettings && profileSettings.cvDataUri && profileSettings.cvDataUri.startsWith('data:application/pdf;base64,')) {
       currentCvDataUri = profileSettings.cvDataUri;
       console.log(`getAdminProfileInitialData: Data URI CV dari DB digunakan.`);
     } else {
       console.log("getAdminProfileInitialData: Data URI CV dari DB tidak ada atau tidak valid, menggunakan string kosong.");
     }
+    
+    // Tidak perlu mengirim isAppUnderConstruction ke klien admin profil untuk permintaan saat ini
 
     console.log("getAdminProfileInitialData: Pengambilan data awal profil admin berhasil.");
     return {
@@ -434,7 +447,7 @@ export async function getAdminProfileInitialData(): Promise<{ success: boolean; 
       data: {
         skills: mappedSkills,
         currentHeroImageUrl,
-        currentCvUrl: currentCvDataUri // Menggunakan currentCvDataUri sebagai currentCvUrl
+        currentCvUrl: currentCvDataUri
       }
     };
 

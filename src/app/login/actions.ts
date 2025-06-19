@@ -21,6 +21,12 @@ interface AdminUserDocument extends Document {
   password?: string;
 }
 
+// Interface untuk dokumen pengaturan profil, hanya untuk field yang diupdate di sini
+interface ProfileSettingsUpdate {
+  isAppUnderConstruction: boolean;
+}
+
+
 const initialAdminUsername = "085156453246";
 const initialAdminPassword = "wahyu-58321";
 
@@ -45,6 +51,7 @@ export async function loginAction(
     const client: MongoClient = await clientPromise;
     const db = client.db();
     const adminUsersCollection: Collection<AdminUserDocument> = db.collection("admin_users");
+    const profileSettingsCollection: Collection<Document> = db.collection("profile_settings");
     console.timeEnd("loginAction_dbConnection");
 
     console.time("loginAction_findUser");
@@ -140,18 +147,36 @@ export async function loginAction(
     cookies().set(ADMIN_AUTH_COOKIE_NAME, token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      maxAge: 60 * 60 * 2,
+      maxAge: 60 * 60 * 2, // 2 hours
       path: '/',
       sameSite: 'lax',
     });
     console.timeEnd("loginAction_setCookie");
+
+    // Set global "under construction" mode
+    console.time("loginAction_setUnderConstructionMode");
+    await profileSettingsCollection.updateOne(
+      {}, // Update the single settings document, or create if it doesn't exist
+      { $set: { isAppUnderConstruction: true } },
+      { upsert: true }
+    );
+    console.timeEnd("loginAction_setUnderConstructionMode");
+
 
     console.timeEnd("loginAction_total");
     return { success: true };
 
   } catch (error) {
     console.error("Error in loginAction:", error);
-    console.timeEnd("loginAction_total"); // Pastikan timer total diakhiri jika ada error
-    return { success: false, error: "Terjadi kesalahan pada server saat login." };
+    console.timeEnd("loginAction_total");
+    let errorMessage = "Terjadi kesalahan pada server saat login.";
+     if (error instanceof Error) {
+        errorMessage = error.message;
+    }
+    // Ensure under construction mode is NOT set if login fails critically
+    // However, this might be complex if the error is after setting the flag.
+    // For now, we assume the flag is only set on full success.
+    return { success: false, error: errorMessage };
   }
 }
+

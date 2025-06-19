@@ -2,9 +2,7 @@
 import PortfolioContent from '@/app/portfolio-content';
 import clientPromise from '@/lib/mongodb';
 import type { MongoClient, ObjectId, Collection, Document } from 'mongodb';
-import { cookies } from 'next/headers';
-import { verifySessionToken } from '@/lib/authUtils';
-import UnderConstructionView from '@/app/under-construction-view'; // Import the new component
+import UnderConstructionView from '@/app/under-construction-view';
 
 // Interface untuk dokumen proyek dari database
 interface ProjectDocument {
@@ -25,10 +23,11 @@ interface SkillDocument {
 }
 
 // Interface untuk dokumen pengaturan profil dari database
-interface ProfileSettingsDocument {
+interface ProfileSettingsDocument extends Document {
   _id?: ObjectId;
   profileImageUri?: string;
   cvDataUri?: string; 
+  isAppUnderConstruction?: boolean; // Ditambahkan field ini
 }
 
 
@@ -74,8 +73,6 @@ export interface PortfolioDataType {
     copyrightYear: number;
 }
 
-const ADMIN_AUTH_COOKIE_NAME = 'admin-auth-token';
-
 // Fungsi untuk mengambil data proyek dari MongoDB
 async function getProjects(): Promise<ProjectData[]> {
   try {
@@ -108,8 +105,12 @@ async function getSkills(): Promise<SkillData[]> {
   }
 }
 
-// Fungsi untuk mengambil data pengaturan profil (termasuk gambar profil dan Data URI CV) dari MongoDB
-async function getProfileSettingsData(): Promise<Partial<ProfileSettingsDocument>> {
+// Fungsi untuk mengambil data pengaturan profil (termasuk gambar profil, CV, dan status "under construction")
+async function getProfileSettingsData(): Promise<{
+  profileImageUri?: string;
+  cvDataUri?: string;
+  isAppUnderConstruction?: boolean;
+}> {
   try {
     const client: MongoClient = await clientPromise;
     const db = client.db();
@@ -120,37 +121,35 @@ async function getProfileSettingsData(): Promise<Partial<ProfileSettingsDocument
       return {
         profileImageUri: settings.profileImageUri,
         cvDataUri: settings.cvDataUri,
+        isAppUnderConstruction: settings.isAppUnderConstruction ?? false, // Default ke false jika field tidak ada
       };
     }
-    return {};
+    return { isAppUnderConstruction: false }; // Default jika dokumen settings tidak ada
   } catch (e) {
     console.error("Failed to fetch profile settings data:", e);
-    return {};
+    return { isAppUnderConstruction: false }; // Default jika terjadi error
   }
 }
 
 
 export default async function PortfolioPage() {
-  let isAdminLoggedIn = false;
-  const tokenCookie = cookies().get(ADMIN_AUTH_COOKIE_NAME);
+  // Mengambil semua data yang diperlukan, termasuk status "under construction"
+  const [
+    fetchedProjects, 
+    fetchedSkills, 
+    profileSettings
+  ] = await Promise.all([
+    getProjects(),
+    getSkills(),
+    getProfileSettingsData() // Fungsi ini sekarang juga mengembalikan isAppUnderConstruction
+  ]);
 
-  if (tokenCookie && tokenCookie.value) {
-    const payload = await verifySessionToken(tokenCookie.value);
-    if (payload) {
-      isAdminLoggedIn = true;
-    }
-  }
-
-  if (isAdminLoggedIn) {
+  // Jika mode "under construction" aktif, tampilkan halaman khusus
+  if (profileSettings.isAppUnderConstruction) {
     return <UnderConstructionView />;
   }
 
-  const [fetchedProjects, fetchedSkills, profileSettings] = await Promise.all([
-    getProjects(),
-    getSkills(),
-    getProfileSettingsData()
-  ]);
-
+  // Jika tidak, lanjutkan menampilkan konten portofolio
   const heroPlaceholder = "https://placehold.co/240x240.png";
   const aboutPlaceholder = "https://placehold.co/320x400.png";
   
@@ -194,3 +193,4 @@ export default async function PortfolioPage() {
 
   return <PortfolioContent portfolioData={portfolioData} />;
 }
+
