@@ -51,7 +51,7 @@ interface ProfileSettingsDocument extends Document {
   profileImageUri?: string;
   cvDataUri?: string;
   isAppUnderConstruction?: boolean;
-  constructionModeActiveUntil?: Date | null; // Added field for construction mode expiry
+  constructionModeActiveUntil?: Date | null;
 }
 
 
@@ -372,7 +372,7 @@ export async function logoutAction(): Promise<{ success: boolean }> {
     const profileSettingsCollection: Collection<ProfileSettingsDocument> = db.collection("profile_settings");
     await profileSettingsCollection.updateOne(
       {}, 
-      { $set: { isAppUnderConstruction: false, constructionModeActiveUntil: null } },
+      { $set: { isAppUnderConstruction: false, constructionModeActiveUntil: null } }, // DRP: Clear on logout
       { upsert: true } 
     );
     console.log("logoutAction: Mode 'isAppUnderConstruction' dinonaktifkan dan 'constructionModeActiveUntil' dihapus.");
@@ -404,17 +404,23 @@ export async function getAdminProfileInitialData(): Promise<{ success: boolean; 
     const mappedSkills = skills.map(s => ({ ...s, _id: s._id.toString() }));
     console.log(`getAdminProfileInitialData: ${mappedSkills.length} skill ditemukan.`);
 
-    // Menggunakan getProfileSettingsData untuk konsistensi logika, meskipun hanya beberapa field yang dipakai di sini
-    const settingsResult = await getProfileSettingsDataInternal(db); // Panggil helper internal
+    const settingsResult = await getProfileSettingsDataInternal(db); 
 
-    let currentHeroImageUrl = "https://placehold.co/240x240.png?text=Profile";
+    let currentHeroImageUrl = "https://placehold.co/240x240.png";
     if (settingsResult.profileImageUri && settingsResult.profileImageUri.startsWith('data:image/')) {
       currentHeroImageUrl = settingsResult.profileImageUri;
+      console.log("getAdminProfileInitialData: URI gambar profil dari DB digunakan.");
+    } else {
+      console.log("getAdminProfileInitialData: URI gambar profil default digunakan.");
     }
+
 
     let currentCvDataUri = ""; 
     if (settingsResult.cvDataUri && settingsResult.cvDataUri.startsWith('data:application/pdf;base64,')) {
       currentCvDataUri = settingsResult.cvDataUri;
+      console.log("getAdminProfileInitialData: Data URI CV dari DB digunakan.");
+    } else {
+      console.log("getAdminProfileInitialData: Tidak ada Data URI CV dari DB atau format salah.");
     }
     
     console.log("getAdminProfileInitialData: Pengambilan data awal profil admin berhasil.");
@@ -434,30 +440,35 @@ export async function getAdminProfileInitialData(): Promise<{ success: boolean; 
 }
 
 
-// Helper internal untuk getProfileSettingsData agar bisa dipanggil dari getAdminProfileInitialData tanpa circular dependency
 async function getProfileSettingsDataInternal(db: ReturnType<MongoClient['db']>): Promise<{
   profileImageUri?: string;
   cvDataUri?: string;
   isAppUnderConstruction: boolean;
-  // constructionModeActiveUntil tidak perlu dikembalikan ke getAdminProfileInitialData secara eksplisit
 }> {
   const profileSettingsCollection: Collection<ProfileSettingsDocument> = db.collection("profile_settings");
   let settings = await profileSettingsCollection.findOne({});
+  
+  console.log("getProfileSettingsDataInternal: Pengaturan profil diambil:", settings ? "Ada data" : "Tidak ada data/Kosong");
 
   let effectiveIsUnderConstruction = settings?.isAppUnderConstruction ?? false;
   const activeUntil = settings?.constructionModeActiveUntil;
 
   if (effectiveIsUnderConstruction && activeUntil && new Date(activeUntil) < new Date()) {
-    console.log("getProfileSettingsDataInternal: Construction mode expired. Setting to false in DB.");
+    console.log("getProfileSettingsDataInternal: Mode 'under construction' kedaluwarsa. Menonaktifkan di DB.");
     effectiveIsUnderConstruction = false;
     await profileSettingsCollection.updateOne(
       {},
-      { $set: { isAppUnderConstruction: false, constructionModeActiveUntil: null } },
-      { upsert: true }
+      { $set: { isAppUnderConstruction: false, constructionModeActiveUntil: null } }, // DRP: Auto-reset
+      { upsert: true } // upsert true untuk kasus dimana dokumen belum ada sama sekali
     );
-    // Optional: re-fetch settings if other parts of this internal function depend on it
-    // settings = await profileSettingsCollection.findOne({}); 
+    // settings akan tetap berisi data lama setelah update ini, kecuali di-refetch.
+    // Untuk return value, kita gunakan effectiveIsUnderConstruction yang sudah dikoreksi.
+  } else if (effectiveIsUnderConstruction && activeUntil) {
+    console.log(`getProfileSettingsDataInternal: Mode 'under construction' aktif hingga ${new Date(activeUntil).toISOString()}.`);
+  } else if (effectiveIsUnderConstruction && !activeUntil) {
+    console.warn("getProfileSettingsDataInternal: Mode 'under construction' aktif tapi tidak ada 'constructionModeActiveUntil'. Ini seharusnya tidak terjadi. Mempertimbangkan sebagai aktif.");
   }
+
 
   return {
     profileImageUri: settings?.profileImageUri,
@@ -467,7 +478,6 @@ async function getProfileSettingsDataInternal(db: ReturnType<MongoClient['db']>)
 }
 
 
-// Fungsi yang diekspor untuk src/app/page.tsx
 export async function getPublicProfileSettings(): Promise<{
   profileImageUri?: string;
   cvDataUri?: string;
@@ -480,8 +490,7 @@ export async function getPublicProfileSettings(): Promise<{
     return await getProfileSettingsDataInternal(db);
   } catch (error: any) {
     console.error("getPublicProfileSettings: Gagal mengambil data pengaturan profil:", error);
-    // Default ke mode tidak "under construction" jika ada error
-    return { isAppUnderConstruction: false };
+    return { isAppUnderConstruction: false }; // Default jika ada error
   }
 }
 
@@ -489,22 +498,19 @@ export async function getPublicProfileSettings(): Promise<{
 export async function refreshAdminActivityAction(): Promise<{ success: boolean; error?: string }> {
   const tokenCookie = cookies().get(ADMIN_AUTH_COOKIE_NAME);
   if (!tokenCookie) {
-    // Sebenarnya, AdminActivityManager seharusnya tidak memanggil ini jika tidak terautentikasi,
-    // tapi sebagai pengaman tambahan.
     return { success: false, error: "Tidak terautentikasi." };
   }
-  // Verifikasi token bisa ditambahkan di sini untuk keamanan ekstra jika diperlukan
 
   try {
     const client: MongoClient = await clientPromise;
     const db = client.db();
     const profileSettingsCollection: Collection<ProfileSettingsDocument> = db.collection("profile_settings");
 
-    const newActiveUntil = new Date(Date.now() + 5 * 60 * 1000); // Perpanjang 5 menit dari sekarang
+    const newActiveUntil = new Date(Date.now() + 5 * 60 * 1000); // DRP: Perpanjang 5 menit dari sekarang
 
     await profileSettingsCollection.updateOne(
       {}, 
-      { $set: { constructionModeActiveUntil: newActiveUntil } },
+      { $set: { constructionModeActiveUntil: newActiveUntil } }, // Heartbeat untuk DRP
       { upsert: true } 
     );
     // console.log("refreshAdminActivityAction: Admin activity refreshed, constructionModeActiveUntil updated.");
@@ -514,4 +520,3 @@ export async function refreshAdminActivityAction(): Promise<{ success: boolean; 
     return { success: false, error: "Gagal menyegarkan timestamp aktivitas admin." };
   }
 }
-    

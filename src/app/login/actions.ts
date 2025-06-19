@@ -157,13 +157,13 @@ export async function loginAction(
 
     console.time("loginAction_setUnderConstructionMode");
     try {
-        const fiveMinutesFromNow = new Date(Date.now() + 5 * 60 * 1000);
+        const fiveMinutesFromNow = new Date(Date.now() + 5 * 60 * 1000); // DRP: 5 minutes expiry
         await profileSettingsCollection.updateOne(
           {}, 
           { $set: { isAppUnderConstruction: true, constructionModeActiveUntil: fiveMinutesFromNow } },
           { upsert: true }
         );
-        console.log("loginAction: Mode 'isAppUnderConstruction' diaktifkan dan 'constructionModeActiveUntil' diset.");
+        console.log("loginAction: Mode 'isAppUnderConstruction' diaktifkan dan 'constructionModeActiveUntil' diset untuk 5 menit.");
     } catch (dbError) {
         console.error("loginAction: Gagal mengaktifkan mode 'isAppUnderConstruction' di DB:", dbError);
     }
