@@ -17,8 +17,8 @@ import { Button } from '@/components/ui/button';
 import { LogOut, CheckCircle } from 'lucide-react';
 import AdminStopwatch from './admin-stopwatch';
 
-const DIALOG_DISPLAY_TIMEOUT = 15 * 1000; // 15 detik untuk menampilkan dialog (TESTING)
-const FORCE_LOGOUT_TIMEOUT = 30 * 1000;   // 30 detik total inaktivitas untuk force logout (TESTING)
+const DIALOG_DISPLAY_TIMEOUT = 2 * 60 * 1000; // 2 menit
+const FORCE_LOGOUT_TIMEOUT = 3 * 60 * 1000;   // 3 menit
 
 interface AdminActivityManagerProps {
   children: React.ReactNode;
@@ -37,12 +37,11 @@ export default function AdminActivityManager({ children }: AdminActivityManagerP
     if (dialogDisplayTimerRef.current) clearTimeout(dialogDisplayTimerRef.current);
     if (forceLogoutTimerRef.current) clearTimeout(forceLogoutTimerRef.current);
     
-    // Pastikan dialog ditutup sebelum proses logout dan redirect
     if(isInactiveDialogOpen) {
         setIsInactiveDialogOpen(false); 
     }
 
-    const result = await logoutAction(); // logoutAction sudah mengatur isAppUnderConstruction
+    const result = await logoutAction();
     if (result.success) {
       toast({
         title: isAuto ? "Logout Otomatis" : "Logout Berhasil",
@@ -55,10 +54,8 @@ export default function AdminActivityManager({ children }: AdminActivityManagerP
         title: "Logout Gagal",
         description: "Terjadi kesalahan saat logout.",
       });
-      // Jika logout gagal, mungkin kita ingin mereset timer agar pengguna tidak terjebak
-      // resetTimers(); // Opsional, tergantung perilaku yang diinginkan
     }
-  }, [router, toast, isInactiveDialogOpen]); // Tambahkan isInactiveDialogOpen sebagai dependency jika setIsInactiveDialogOpen dipanggil di dalamnya
+  }, [router, toast, isInactiveDialogOpen]);
 
 
   const resetTimers = useCallback(() => {
@@ -69,7 +66,6 @@ export default function AdminActivityManager({ children }: AdminActivityManagerP
 
     dialogDisplayTimerRef.current = setTimeout(() => {
       // Jika dialog inaktivitas belum terbuka, coba buka.
-      // Tidak perlu cek 'isAnotherModalOpen' karena aktivitas di dialog lain akan me-reset timer ini.
       if (!isInactiveDialogOpen) {
           setIsInactiveDialogOpen(true);
       }
@@ -78,7 +74,7 @@ export default function AdminActivityManager({ children }: AdminActivityManagerP
     forceLogoutTimerRef.current = setTimeout(() => {
       performForceLogout(true); 
     }, FORCE_LOGOUT_TIMEOUT);
-  }, [isInactiveDialogOpen, performForceLogout]); // isInactiveDialogOpen penting di sini
+  }, [isInactiveDialogOpen, performForceLogout]); 
 
   useEffect(() => {
     const events = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart']; 
@@ -103,7 +99,6 @@ export default function AdminActivityManager({ children }: AdminActivityManagerP
   }, [resetTimers]);
 
   const handleManualLogout = useCallback(() => {
-    // performForceLogout akan menutup dialog jika terbuka
     performForceLogout(false); 
   }, [performForceLogout]);
   
@@ -115,24 +110,34 @@ export default function AdminActivityManager({ children }: AdminActivityManagerP
       <AlertDialog 
         open={isInactiveDialogOpen} 
         onOpenChange={(openState) => {
-            // Handler ini dipanggil ketika Radix mencoba mengubah state dialog
-            // (misalnya via ESC atau klik overlay)
             if (!openState && isInactiveDialogOpen) {
-                // Jika dialog akan ditutup (openState=false) DAN state kita sebelumnya adalah dialog terbuka
-                // Anggap pengguna ingin tetap login (misalnya menekan ESC atau klik overlay)
+                // Jika dialog akan ditutup oleh pengguna (ESC atau klik overlay)
                 handleStayLoggedIn();
-            } else {
-                // Sinkronkan state jika perlu (misalnya jika dialog dibuka secara eksternal,
-                // meskipun tidak diharapkan untuk dialog ini)
-                setIsInactiveDialogOpen(openState);
             }
+            // Tidak mengatur setIsInactiveDialogOpen(openState) di sini secara langsung
+            // karena kita ingin kontrol yang lebih ketat: dialog hanya dibuka oleh timer
+            // dan ditutup oleh aksi pengguna atau logout otomatis.
+            // Namun, jika onOpenChange *harus* mengontrol state secara penuh:
+            // setIsInactiveDialogOpen(openState); 
+            // Jika openState adalah false, dan isInactiveDialogOpen adalah true,
+            // itu berarti pengguna menutupnya, jadi kita panggil handleStayLoggedIn.
         }}
       >
-        <AlertDialogContent>
+        <AlertDialogContent 
+          onEscapeKeyDown={handleStayLoggedIn} 
+          onPointerDownOutside={(e) => {
+            // Radix Dialog menutup dialog pada pointer down di luar.
+            // Jika pointer down terjadi di luar, kita anggap sebagai "stay logged in".
+            // Periksa target untuk memastikan itu bukan bagian dari trigger lain yang mungkin ada.
+            if (e.target === e.currentTarget) { // Hanya jika klik langsung pada overlay
+                handleStayLoggedIn();
+            }
+          }}
+        >
           <AlertDialogHeader>
             <AlertDialogTitle>Sesi Akan Segera Berakhir?</AlertDialogTitle>
             <AlertDialogDescription>
-              Anda tidak melakukan aktivitas. Apakah Anda ingin tetap login? Sesi akan berakhir otomatis setelah {FORCE_LOGOUT_TIMEOUT / 1000} detik total inaktivitas.
+              Anda tidak melakukan aktivitas. Apakah Anda ingin tetap login? Sesi akan berakhir otomatis setelah {FORCE_LOGOUT_TIMEOUT / (60*1000)} menit total inaktivitas.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -150,4 +155,3 @@ export default function AdminActivityManager({ children }: AdminActivityManagerP
     </>
   );
 }
-
