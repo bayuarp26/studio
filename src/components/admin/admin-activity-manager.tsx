@@ -36,9 +36,13 @@ export default function AdminActivityManager({ children }: AdminActivityManagerP
   const performForceLogout = useCallback(async (isAuto: boolean = true) => {
     if (dialogDisplayTimerRef.current) clearTimeout(dialogDisplayTimerRef.current);
     if (forceLogoutTimerRef.current) clearTimeout(forceLogoutTimerRef.current);
-    setIsInactiveDialogOpen(false); 
+    
+    // Pastikan dialog ditutup sebelum proses logout dan redirect
+    if(isInactiveDialogOpen) {
+        setIsInactiveDialogOpen(false); 
+    }
 
-    const result = await logoutAction();
+    const result = await logoutAction(); // logoutAction sudah mengatur isAppUnderConstruction
     if (result.success) {
       toast({
         title: isAuto ? "Logout Otomatis" : "Logout Berhasil",
@@ -51,39 +55,30 @@ export default function AdminActivityManager({ children }: AdminActivityManagerP
         title: "Logout Gagal",
         description: "Terjadi kesalahan saat logout.",
       });
+      // Jika logout gagal, mungkin kita ingin mereset timer agar pengguna tidak terjebak
+      // resetTimers(); // Opsional, tergantung perilaku yang diinginkan
     }
-  }, [router, toast]);
+  }, [router, toast, isInactiveDialogOpen]); // Tambahkan isInactiveDialogOpen sebagai dependency jika setIsInactiveDialogOpen dipanggil di dalamnya
+
 
   const resetTimers = useCallback(() => {
     if (dialogDisplayTimerRef.current) clearTimeout(dialogDisplayTimerRef.current);
     if (forceLogoutTimerRef.current) clearTimeout(forceLogoutTimerRef.current);
     
-    // Jika dialog inaktivitas sedang terbuka dan timer direset (karena aktivitas), tutup dialognya.
-    if (isInactiveDialogOpen) {
-        setIsInactiveDialogOpen(false);
-    }
-    
     setStopwatchResetKey(Date.now());
 
     dialogDisplayTimerRef.current = setTimeout(() => {
-      // Hanya buka dialog inaktivitas jika tidak ada dialog lain yang sedang aktif
-      // dan dialog inaktivitas itu sendiri belum terbuka.
-      const isAnotherModalOpen = !!document.querySelector(
-        '[data-radix-alert-dialog-content][data-state="open"], [data-radix-dialog-content][data-state="open"]'
-      );
-
-      if (!isInactiveDialogOpen && !isAnotherModalOpen) {
-        setIsInactiveDialogOpen(true);
-      } else if (isAnotherModalOpen) {
-        // Jika dialog lain terbuka, jangan tampilkan dialog inaktivitas.
-        // Timer akan direset lagi ketika pengguna berinteraksi setelah menutup dialog lain tersebut.
+      // Jika dialog inaktivitas belum terbuka, coba buka.
+      // Tidak perlu cek 'isAnotherModalOpen' karena aktivitas di dialog lain akan me-reset timer ini.
+      if (!isInactiveDialogOpen) {
+          setIsInactiveDialogOpen(true);
       }
     }, DIALOG_DISPLAY_TIMEOUT);
 
     forceLogoutTimerRef.current = setTimeout(() => {
       performForceLogout(true); 
     }, FORCE_LOGOUT_TIMEOUT);
-  }, [isInactiveDialogOpen, performForceLogout]);
+  }, [isInactiveDialogOpen, performForceLogout]); // isInactiveDialogOpen penting di sini
 
   useEffect(() => {
     const events = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart']; 
@@ -92,7 +87,7 @@ export default function AdminActivityManager({ children }: AdminActivityManagerP
     };
 
     events.forEach(event => window.addEventListener(event, handleActivity, { passive: true }));
-    resetTimers(); // Panggil resetTimers saat komponen pertama kali dimuat
+    resetTimers(); 
 
     return () => {
       events.forEach(event => window.removeEventListener(event, handleActivity));
@@ -101,15 +96,17 @@ export default function AdminActivityManager({ children }: AdminActivityManagerP
     };
   }, [resetTimers]);
 
-  const handleManualLogout = () => {
-    // setIsInactiveDialogOpen(false); // performForceLogout akan menanganinya
-    performForceLogout(false); 
-  };
 
-  const handleStayLoggedIn = () => {
-    setIsInactiveDialogOpen(false); // Tutup dialog
-    resetTimers(); // Reset semua timer
-  };
+  const handleStayLoggedIn = useCallback(() => {
+    setIsInactiveDialogOpen(false); 
+    resetTimers(); 
+  }, [resetTimers]);
+
+  const handleManualLogout = useCallback(() => {
+    // performForceLogout akan menutup dialog jika terbuka
+    performForceLogout(false); 
+  }, [performForceLogout]);
+  
 
   return (
     <>
@@ -117,24 +114,25 @@ export default function AdminActivityManager({ children }: AdminActivityManagerP
       <AdminStopwatch resetKey={stopwatchResetKey} />
       <AlertDialog 
         open={isInactiveDialogOpen} 
-        onOpenChange={(open) => {
-          // Jika Radix mencoba menutup dialog (misalnya via ESC atau klik overlay)
-          if (!open) {
-            // dan dialog memang sedang dalam state terbuka menurut logika kita
-            if (isInactiveDialogOpen) {
-              handleStayLoggedIn(); // Anggap pengguna ingin tetap login
+        onOpenChange={(openState) => {
+            // Handler ini dipanggil ketika Radix mencoba mengubah state dialog
+            // (misalnya via ESC atau klik overlay)
+            if (!openState && isInactiveDialogOpen) {
+                // Jika dialog akan ditutup (openState=false) DAN state kita sebelumnya adalah dialog terbuka
+                // Anggap pengguna ingin tetap login (misalnya menekan ESC atau klik overlay)
+                handleStayLoggedIn();
+            } else {
+                // Sinkronkan state jika perlu (misalnya jika dialog dibuka secara eksternal,
+                // meskipun tidak diharapkan untuk dialog ini)
+                setIsInactiveDialogOpen(openState);
             }
-          } else {
-            // Jika Radix mencoba membuka dialog, sinkronkan state (walaupun biasanya tidak terjadi dari sini)
-             setIsInactiveDialogOpen(true);
-          }
         }}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Sesi Akan Segera Berakhir?</AlertDialogTitle>
             <AlertDialogDescription>
-              Anda tidak melakukan aktivitas selama beberapa waktu. Apakah Anda ingin tetap login? Sesi akan berakhir otomatis setelah {FORCE_LOGOUT_TIMEOUT / 1000} detik total inaktivitas.
+              Anda tidak melakukan aktivitas. Apakah Anda ingin tetap login? Sesi akan berakhir otomatis setelah {FORCE_LOGOUT_TIMEOUT / 1000} detik total inaktivitas.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -152,3 +150,4 @@ export default function AdminActivityManager({ children }: AdminActivityManagerP
     </>
   );
 }
+
