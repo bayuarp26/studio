@@ -6,6 +6,7 @@ import { cookies } from "next/headers";
 import clientPromise from "@/lib/mongodb";
 import type { MongoClient, Collection, Document, ObjectId } from 'mongodb';
 import { hashPassword, comparePassword, createSessionToken } from "@/lib/authUtils";
+import { revalidatePath } from "next/cache";
 
 const ADMIN_AUTH_COOKIE_NAME = 'admin-auth-token';
 
@@ -18,7 +19,7 @@ interface AdminUserDocument extends Document {
   _id: ObjectId;
   username: string;
   hashedPassword?: string;
-  password?: string;
+  password?: string; // For legacy password migration
 }
 
 // Interface untuk dokumen pengaturan profil, hanya untuk field yang diupdate di sini
@@ -51,7 +52,7 @@ export async function loginAction(
     const client: MongoClient = await clientPromise;
     const db = client.db();
     const adminUsersCollection: Collection<AdminUserDocument> = db.collection("admin_users");
-    const profileSettingsCollection: Collection<Document> = db.collection("profile_settings");
+    const profileSettingsCollection: Collection<Document> = db.collection("profile_settings"); // Using Document for flexibility here
     console.timeEnd("loginAction_dbConnection");
 
     console.time("loginAction_findUser");
@@ -73,7 +74,7 @@ export async function loginAction(
             const result = await adminUsersCollection.insertOne({
               username: initialAdminUsername,
               hashedPassword: hashedPassword,
-            } as AdminUserDocument);
+            } as AdminUserDocument); // Cast to ensure type compatibility if AdminUserDocument is more specific
             console.timeEnd("loginAction_initialUser_insert");
 
              const insertedId = result.insertedId;
@@ -100,6 +101,7 @@ export async function loginAction(
       }
     }
 
+    // Legacy password migration logic
     if (adminUser && adminUser.password && !adminUser.hashedPassword) {
       const isLegacyPasswordMatch = (password === adminUser.password);
       if(isLegacyPasswordMatch) {
@@ -114,11 +116,11 @@ export async function loginAction(
             $set: {
               hashedPassword: newHashedPassword,
             },
-            $unset: { password: "" }
+            $unset: { password: "" } // Remove the old plain password field
           }
         );
         console.timeEnd("loginAction_legacyMigration_update");
-        adminUser.hashedPassword = newHashedPassword;
+        adminUser.hashedPassword = newHashedPassword; // Update in-memory user object
       } else {
         console.timeEnd("loginAction_total");
         return { success: false, error: "Username atau password salah." };
@@ -126,6 +128,7 @@ export async function loginAction(
     }
 
     if (!adminUser || !adminUser.hashedPassword) {
+        // This case should ideally not be reached if initial user creation or migration is successful
         console.timeEnd("loginAction_total");
         return { success: false, error: "Konfigurasi akun admin tidak lengkap atau username salah." };
     }
@@ -155,13 +158,23 @@ export async function loginAction(
 
     // Set global "under construction" mode
     console.time("loginAction_setUnderConstructionMode");
-    await profileSettingsCollection.updateOne(
-      {}, // Update the single settings document, or create if it doesn't exist
-      { $set: { isAppUnderConstruction: true } },
-      { upsert: true }
-    );
+    try {
+        await profileSettingsCollection.updateOne(
+          {}, // Update the single settings document, or create if it doesn't exist
+          { $set: { isAppUnderConstruction: true } },
+          { upsert: true }
+        );
+        console.log("loginAction: Mode 'isAppUnderConstruction' diaktifkan.");
+    } catch (dbError) {
+        console.error("loginAction: Gagal mengaktifkan mode 'isAppUnderConstruction' di DB:", dbError);
+        // Decide if login should fail if this DB update fails. For now, proceeding.
+    }
     console.timeEnd("loginAction_setUnderConstructionMode");
 
+    // Revalidate paths to reflect changes immediately
+    revalidatePath('/'); 
+    revalidatePath('/admin/profile'); 
+    console.log("loginAction: Paths / and /admin/profile revalidated.");
 
     console.timeEnd("loginAction_total");
     return { success: true };
@@ -173,10 +186,6 @@ export async function loginAction(
      if (error instanceof Error) {
         errorMessage = error.message;
     }
-    // Ensure under construction mode is NOT set if login fails critically
-    // However, this might be complex if the error is after setting the flag.
-    // For now, we assume the flag is only set on full success.
     return { success: false, error: errorMessage };
   }
 }
-
