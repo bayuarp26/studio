@@ -334,7 +334,7 @@ export default function AddCertificatePage() {
                                 </label>
                                 <p className="pl-1">atau tarik dan lepas</p>
                               </div>
-                              <p className="text-xs text-muted-foreground">PNG, JPG, GIF, WEBP hingga {MAX_FILE_SIZE / (1024*1024)}MB</p>
+                              <p className="text-xs text-muted-foreground">PNG, JPG, GIF, WEBP hingga ${MAX_FILE_SIZE / (1024*1024)}MB</p>
                             </>
                           )}
                         </div>
