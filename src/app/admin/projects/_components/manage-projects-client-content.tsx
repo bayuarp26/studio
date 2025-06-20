@@ -8,7 +8,7 @@ import SectionContainer from '@/components/section-container';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, UserCog, Home, LogOut, ListOrdered } from 'lucide-react'; // Menggunakan ListOrdered
+import { PlusCircle, UserCog, Home, LogOut, ListOrdered, ShieldCheck } from 'lucide-react';
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { logoutAction } from "../../profile/actions";
@@ -24,6 +24,7 @@ export default function ManageProjectsClientContent({ initialProjects, serverErr
   const router = useRouter();
   const { toast } = useToast();
   const [projects, setProjects] = useState<ProjectData[]>(initialProjects);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
     setProjects(initialProjects);
@@ -41,12 +42,14 @@ export default function ManageProjectsClientContent({ initialProjects, serverErr
 
 
   const handleLogout = async () => {
+    setIsLoggingOut(true);
     const result = await logoutAction();
     if (result.success) {
       toast({
         title: "Logout Berhasil",
         description: "Anda telah berhasil logout.",
       });
+      router.refresh();
       router.push("/login");
     } else {
        toast({
@@ -55,6 +58,7 @@ export default function ManageProjectsClientContent({ initialProjects, serverErr
         description: "Terjadi kesalahan saat logout.",
       });
     }
+    setIsLoggingOut(false);
   };
 
   const projectsToDisplay = projects || [];
@@ -72,6 +76,12 @@ export default function ManageProjectsClientContent({ initialProjects, serverErr
               </Link>
             </Button>
             <Button asChild variant="outline">
+              <Link href="/admin/add-certificate">
+                <ShieldCheck className="mr-2 h-4 w-4" />
+                Tambah Sertifikat
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
                 <Link href="/admin/profile">
                     <UserCog className="mr-2 h-4 w-4" />
                     Pengaturan Profil
@@ -83,9 +93,9 @@ export default function ManageProjectsClientContent({ initialProjects, serverErr
                 Halaman Utama
               </Link>
             </Button>
-            <Button variant="destructive" onClick={handleLogout}>
+            <Button variant="destructive" onClick={handleLogout} disabled={isLoggingOut}>
               <LogOut className="mr-2 h-4 w-4" />
-              Logout
+              {isLoggingOut ? "Logging out..." : "Logout"}
             </Button>
         </div>
       </div>
@@ -104,8 +114,8 @@ export default function ManageProjectsClientContent({ initialProjects, serverErr
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {projectsToDisplay.map((project) => (
-            <div key={project._id}> {/* Removed perspective wrapper */}
-              <Card className="flex flex-col overflow-hidden shadow-lg transition-shadow hover:shadow-md"> {/* Removed 3D hover classes */}
+            <div key={project._id}> 
+              <Card className="flex flex-col overflow-hidden shadow-lg transition-shadow hover:shadow-md h-full"> 
                 <CardHeader className="p-0">
                   <div className="relative aspect-[16/9] w-full">
                     <Image
@@ -146,3 +156,5 @@ export default function ManageProjectsClientContent({ initialProjects, serverErr
     </SectionContainer>
   );
 }
+
+    

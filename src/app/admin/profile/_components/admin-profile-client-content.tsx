@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import SectionContainer from '@/components/section-container';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Home, ImageUp, ListChecks, FileText, UserCog, LogOut, KeyRound, PlusCircle, ListOrdered } from 'lucide-react';
+import { Home, ImageUp, ListChecks, FileText, UserCog, LogOut, KeyRound, PlusCircle, ListOrdered, ShieldCheck, Projector } from 'lucide-react';
 import UpdateProfileImageForm from './update-profile-image-form';
 import ManageSkillsSection from './manage-skills-section';
 import UpdateCVForm from './update-cv-form';
@@ -16,7 +16,7 @@ import type { AdminProfileInitialData as AdminProfilePageData } from "../actions
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState } from 'react';
-import PostActionDialog from '@/components/admin/post-action-dialog'; // Import PostActionDialog
+import PostActionDialog from '@/components/admin/post-action-dialog';
 
 interface AdminProfileClientContentProps {
   initialData: AdminProfilePageData | null;
@@ -30,6 +30,7 @@ export default function AdminProfileClientContent({ initialData, serverError }: 
   const [isPostActionDialogOpen, setIsPostActionDialogOpen] = useState(false);
   const [postActionDialogTitle, setPostActionDialogTitle] = useState("Tindakan Berhasil");
   const [postActionDialogDescription, setPostActionDialogDescription] = useState("Perubahan telah disimpan. Apa yang ingin Anda lakukan selanjutnya?");
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
     setData(initialData);
@@ -46,13 +47,15 @@ export default function AdminProfileClientContent({ initialData, serverError }: 
   }, [serverError, toast]);
 
   const handleLogout = async () => {
-    setIsPostActionDialogOpen(false); // Pastikan dialog ditutup sebelum logout
+    setIsLoggingOut(true);
+    setIsPostActionDialogOpen(false); 
     const result = await logoutAction();
     if (result.success) {
       toast({
         title: "Logout Berhasil",
         description: "Anda telah berhasil logout.",
       });
+      router.refresh();
       router.push("/login");
     } else {
        toast({
@@ -61,6 +64,7 @@ export default function AdminProfileClientContent({ initialData, serverError }: 
         description: "Terjadi kesalahan saat logout.",
       });
     }
+    setIsLoggingOut(false);
   };
 
   const openSuccessDialog = (title?: string, description?: string) => {
@@ -112,8 +116,20 @@ export default function AdminProfileClientContent({ initialData, serverError }: 
             </Button>
             <Button asChild variant="outline">
               <Link href="/admin/projects">
-                <ListOrdered className="mr-2 h-4 w-4" />
+                <Projector className="mr-2 h-4 w-4" />
                 Kelola Proyek
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/admin/add-certificate">
+                <ShieldCheck className="mr-2 h-4 w-4" />
+                Tambah Sertifikat
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/admin/manage-certificates">
+                <ListOrdered className="mr-2 h-4 w-4" />
+                Kelola Sertifikat
               </Link>
             </Button>
             <Button asChild variant="outline">
@@ -122,9 +138,9 @@ export default function AdminProfileClientContent({ initialData, serverError }: 
                 Halaman Utama
               </Link>
             </Button>
-            <Button variant="destructive" onClick={handleLogout}>
+            <Button variant="destructive" onClick={handleLogout} disabled={isLoggingOut}>
               <LogOut className="mr-2 h-4 w-4" />
-              Logout
+              {isLoggingOut ? "Logging out..." : "Logout"}
             </Button>
           </div>
         </div>
@@ -161,7 +177,6 @@ export default function AdminProfileClientContent({ initialData, serverError }: 
                 <ManageSkillsSection 
                   initialSkills={data.skills} 
                   onAddSkillSuccess={() => openSuccessDialog("Keahlian Ditambahkan", "Keahlian baru berhasil ditambahkan.")}
-                  // Untuk delete, biasanya cukup toast, tidak perlu dialog "lanjutkan mengedit"
                 />
               </CardContent>
             </Card>
@@ -196,7 +211,6 @@ export default function AdminProfileClientContent({ initialData, serverError }: 
               </CardHeader>
               <CardContent>
                 <UpdateAdminCredentialsForm /> 
-                {/* Dialog post-action tidak cocok di sini karena akan otomatis logout */}
               </CardContent>
             </Card>
           </div>
@@ -213,3 +227,5 @@ export default function AdminProfileClientContent({ initialData, serverError }: 
     </>
   );
 }
+
+    
