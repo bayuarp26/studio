@@ -133,7 +133,7 @@ export default function AddCertificatePage() {
         title: "Logout Berhasil",
         description: "Anda telah berhasil logout.",
       });
-      router.refresh();
+      router.refresh(); // Refresh to reflect logout state
       router.push("/login");
     } else {
        toast({
@@ -379,5 +379,3 @@ export default function AddCertificatePage() {
     </>
   );
 }
-
-    

@@ -1,7 +1,7 @@
 
 import { Button } from '@/components/ui/button';
-import { Github, Linkedin, UserCog } from 'lucide-react'; // Added UserCog
-import Link from 'next/link'; // Added Link
+import { Github, Linkedin, UserCog } from 'lucide-react'; 
+import Link from 'next/link'; 
 
 interface SocialLinks {
   github: string;
@@ -28,9 +28,9 @@ export default function Footer({ copyrightName, year, socialLinks }: FooterProps
             <Linkedin className="h-5 w-5" />
           </a>
         </Button>
-        {/* Admin Button Added Here */}
+        
         <Button asChild variant="ghost" size="icon" className="text-footer-foreground hover:bg-primary/10 hover:text-primary rounded-full">
-          <Link href="/admin/profile" aria-label="Admin Panel">
+          <Link href="/login" aria-label="Admin Panel Login">
             <UserCog className="h-5 w-5" />
           </Link>
         </Button>

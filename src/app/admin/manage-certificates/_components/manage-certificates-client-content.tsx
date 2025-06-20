@@ -7,13 +7,12 @@ import DeleteCertificateButton from '@/components/delete-certificate-button';
 import SectionContainer from '@/components/section-container';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import Image from 'next/image';
-import { PlusCircle, UserCog, Home, LogOut, ShieldCheck, Projector } from 'lucide-react';
+import { PlusCircle, UserCog, Home, LogOut, ShieldCheck, Projector, ExternalLink } from 'lucide-react';
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { logoutAction } from "../../../profile/actions";
 import type { CertificateDataForAdmin as CertificateData } from "../actions";
 import { useEffect, useState } from 'react';
-import { ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 import { id as LocaleID } from 'date-fns/locale';
 
@@ -51,7 +50,7 @@ export default function ManageCertificatesClientContent({ initialCertificates, s
         title: "Logout Berhasil",
         description: "Anda telah berhasil logout.",
       });
-      router.refresh();
+      router.refresh(); // Refresh to reflect logout state
       router.push("/login");
     } else {
        toast({
@@ -166,5 +165,3 @@ export default function ManageCertificatesClientContent({ initialCertificates, s
     </SectionContainer>
   );
 }
-
-    
