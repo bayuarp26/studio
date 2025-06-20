@@ -31,7 +31,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // serverComponentsExternalPackages: [] // This line is removed as it's no longer valid
 };
 
 export default nextConfig;
